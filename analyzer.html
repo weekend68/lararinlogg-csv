@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lärarregistreringar – Kombinationsanalys</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
+
+    /* Header */
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+    .header-filename { font-size: 12px; opacity: 0.5; }
+
+    /* Upload */
+    #upload-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 56px);
+    }
+    .upload-card {
+      background: white;
+      border-radius: 16px;
+      padding: 56px 48px;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      max-width: 480px;
+      width: 100%;
+    }
+    .upload-icon { font-size: 52px; margin-bottom: 20px; }
+    .upload-card h2 { font-size: 22px; margin-bottom: 8px; }
+    .upload-card p { color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 28px; }
+    .upload-label {
+      display: inline-block;
+      padding: 12px 28px;
+      background: #4f46e5;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 15px;
+      transition: background 0.15s;
+    }
+    .upload-label:hover { background: #4338ca; }
+    #file-input { display: none; }
+
+    /* Main layout */
+    #analysis-section { padding: 24px; max-width: 1440px; margin: 0 auto; }
+
+    /* Stats */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .stat-value { font-size: 26px; font-weight: 700; color: #4f46e5; display: block; }
+    .stat-label { font-size: 12px; color: #6b7280; margin-top: 3px; display: block; }
+
+    /* Incomplete notice */
+    .notice {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: #92400e;
+      margin-bottom: 16px;
+    }
+
+    /* Filters */
+    .filters-card {
+      background: white;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .filters-row { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+    .filter-label { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; }
+    .filter-group input[type="date"],
+    .filter-group select {
+      padding: 7px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #374151;
+      background: white;
+      cursor: pointer;
+      height: 34px;
+    }
+    .filter-group input[type="date"]:focus,
+    .filter-group select:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+
+    /* Dropdown multi-select */
+    .dropdown-wrap { position: relative; }
+    .dropdown-trigger {
+      display: block;
+      padding: 0 30px 0 10px;
+      height: 34px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #374151;
+      background: white;
+      cursor: pointer;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+      min-width: 170px;
+      line-height: 34px;
+      transition: border-color 0.15s;
+    }
+    .dropdown-trigger:hover { border-color: #9ca3af; }
+    .dropdown-trigger.has-selection { border-color: #4f46e5; color: #4f46e5; font-weight: 500; }
+    .dropdown-trigger::after {
+      content: '▾';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      font-size: 11px;
+    }
+    .dropdown-panel {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      z-index: 200;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      min-width: 240px;
+      max-height: 340px;
+      overflow-y: auto;
+      display: none;
+    }
+    .dropdown-panel.open { display: block; }
+    .dropdown-search {
+      width: 100%;
+      padding: 9px 12px;
+      border: none;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 13px;
+      outline: none;
+      color: #374151;
+      position: sticky;
+      top: 0;
+      background: white;
+    }
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #374151;
+      transition: background 0.08s;
+    }
+    .dropdown-item:hover { background: #f5f3ff; }
+    .dropdown-item input[type="checkbox"] { cursor: pointer; accent-color: #4f46e5; flex-shrink: 0; }
+
+    /* Reset button */
+    .btn-reset {
+      padding: 0 14px;
+      height: 34px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: white;
+      color: #374151;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-reset:hover { background: #f9fafb; border-color: #9ca3af; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .tab {
+      padding: 10px 22px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+    }
+    .tab:hover { color: #374151; }
+    .tab.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+
+    /* Table card */
+    .table-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    .table-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .table-header-row h3 { font-size: 14px; font-weight: 600; }
+    .result-count { font-size: 12px; color: #6b7280; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      text-align: left;
+      padding: 9px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid #f3f4f6; transition: background 0.08s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafafa; }
+    tbody td { padding: 11px 14px; font-size: 13px; vertical-align: top; }
+
+    /* Tags */
+    .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tag {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+    .tag-level { background: #ede9fe; color: #5b21b6; }
+    .tag-subject { background: #e0f2fe; color: #0369a1; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge::before { content: '●'; font-size: 8px; }
+    .badge-very-common { background: #6ee7b7; color: #064e3b; }
+    .badge-common { background: #d1fae5; color: #065f46; }
+    .badge-unusual { background: #fef3c7; color: #92400e; }
+    .badge-rare { background: #fee2e2; color: #991b1b; }
+    .badge-expected { background: #f3f4f6; color: #374151; }
+
+    /* Timeline chart */
+    .chart-outer { overflow-x: auto; padding: 16px 20px 8px; }
+    .chart-inner { display: inline-flex; align-items: flex-end; gap: 3px; min-width: 100%; }
+    .chart-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+    .chart-col-body { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 180px; width: 100%; }
+    .chart-count { font-size: 10px; color: #6b7280; margin-bottom: 2px; min-height: 14px; text-align: center; }
+    .chart-bar { width: 100%; border-radius: 3px 3px 0 0; }
+    .chart-bar-filled { background: #4f46e5; }
+    .chart-bar-empty  { background: #e5e7eb; height: 3px !important; border-radius: 2px; }
+    .chart-label { font-size: 10px; color: #6b7280; padding-top: 5px; text-align: center; white-space: nowrap; }
+    .chart-label-day { font-size: 9px; color: #9ca3af; }
+
+    /* Distribution chart */
+    .dist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 900px) { .dist-grid { grid-template-columns: 1fr; } }
+    .dist-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px solid #f3f4f6; }
+    .dist-row:last-child { border-bottom: none; }
+    .dist-key { width: 28px; text-align: right; font-size: 13px; font-weight: 600; color: #374151; flex-shrink: 0; }
+    .dist-key-wide { width: 200px; font-size: 12px; font-weight: 500; color: #374151; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dist-bar-wrap { flex: 1; }
+    .dist-bar { height: 16px; border-radius: 3px; min-width: 2px; }
+    .dist-bar-level   { background: #7c3aed; }
+    .dist-bar-subject { background: #0369a1; }
+    .dist-count { width: 90px; font-size: 12px; color: #6b7280; flex-shrink: 0; }
+
+    /* Matrix view */
+    .matrix-wrap { overflow-x: auto; overflow-y: auto; max-height: 75vh; }
+    .matrix-table { border-collapse: collapse; white-space: nowrap; }
+    .matrix-table td, .matrix-table th { border: 1px solid #e5e7eb; }
+    .matrix-col-header {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      white-space: nowrap;
+      font-size: 10px;
+      font-weight: 500;
+      color: #374151;
+      padding: 6px 4px;
+      max-height: 130px;
+      text-align: left;
+      background: #f9fafb;
+      vertical-align: bottom;
+    }
+    .matrix-row-header {
+      position: sticky;
+      left: 0;
+      background: white;
+      z-index: 2;
+      padding: 6px 10px;
+      font-size: 12px;
+      min-width: 160px;
+      border-right: 2px solid #e5e7eb;
+    }
+    .matrix-cell {
+      text-align: center;
+      font-size: 11px;
+      padding: 4px 6px;
+      min-width: 36px;
+      cursor: default;
+    }
+    .matrix-total-cell {
+      text-align: center;
+      font-size: 11px;
+      padding: 4px 8px;
+      font-weight: 600;
+      color: #374151;
+      background: #f9fafb;
+      position: sticky;
+      left: 160px;
+      border-right: 2px solid #e5e7eb;
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 56px;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .filters-row { flex-direction: column; align-items: stretch; }
+      .dropdown-trigger { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>UR Play — Kombinationsanalys</h1>
+  <span class="header-filename" id="header-filename"></span>
+</header>
+
+<!-- Upload screen -->
+<div id="upload-section">
+  <div class="upload-card">
+    <div class="upload-icon">📊</div>
+    <h2>Kombinationsanalys</h2>
+    <p>Ladda upp <strong>users-export.csv</strong> för att utforska kombinationer av utbildningsnivåer och ämnen, och identifiera ovanliga registreringar.</p>
+    <label class="upload-label" for="file-input">Välj CSV-fil</label>
+    <input type="file" id="file-input" accept=".csv" onchange="handleFile(this)">
+  </div>
+</div>
+
+<!-- Analysis screen -->
+<div id="analysis-section" style="display:none">
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <span class="stat-value" id="stat-total">0</span>
+      <span class="stat-label">Totalt antal användare</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-filtered">0</span>
+      <span class="stat-label">Visas (efter filter)</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-combos">0</span>
+      <span class="stat-label">Unika kombinationer</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-latest">–</span>
+      <span class="stat-label">Senaste registrering</span>
+    </div>
+  </div>
+
+  <div class="filters-card">
+    <div class="filters-row">
+      <div class="filter-group">
+        <span class="filter-label">Från datum</span>
+        <input type="date" id="filter-from" onchange="applyFilters()">
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Till datum</span>
+        <input type="date" id="filter-to" onchange="applyFilters()">
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Utbildningsnivå</span>
+        <div class="dropdown-wrap" id="levels-wrap">
+          <button class="dropdown-trigger" id="levels-trigger" onclick="toggleDropdown('levels', event)">Alla nivåer</button>
+          <div class="dropdown-panel" id="levels-panel">
+            <input class="dropdown-search" type="text" placeholder="Sök nivå..." oninput="filterDropdownItems('levels', this.value)">
+            <div id="levels-items"></div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Ämne</span>
+        <div class="dropdown-wrap" id="subjects-wrap">
+          <button class="dropdown-trigger" id="subjects-trigger" onclick="toggleDropdown('subjects', event)">Alla ämnen</button>
+          <div class="dropdown-panel" id="subjects-panel">
+            <input class="dropdown-search" type="text" placeholder="Sök ämne..." oninput="filterDropdownItems('subjects', this.value)">
+            <div id="subjects-items"></div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Roll</span>
+        <select id="filter-role" onchange="applyFilters()">
+          <option value="">Alla roller</option>
+          <option value="teacher">Lärare</option>
+          <option value="student">Elev</option>
+          <option value="other">Övrig</option>
+          <option value="__empty__">Utan roll</option>
+        </select>
+      </div>
+      <div class="filter-group" style="justify-content:flex-end">
+        <span class="filter-label">&nbsp;</span>
+        <button class="btn-reset" onclick="resetFilters()">Återställ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notice" id="incomplete-notice" style="display:none">
+    <strong>⚠ Ofullständiga profiler:</strong> <span id="incomplete-count">0</span> användare saknar utbildningsnivå och/eller ämnen och ingår inte i kombinationsanalyserna nedan. <span id="incomplete-breakdown" style="color:#b45309"></span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-profiles" onclick="switchView('profiles', this)">Fullständiga profiler (rådata)</button>
+    <button class="tab" id="tab-pairwise" onclick="switchView('pairwise', this)">Parvisa kombinationer</button>
+    <button class="tab" id="tab-matrix" onclick="switchView('matrix', this)">Matris</button>
+    <button class="tab" id="tab-distribution" onclick="switchView('distribution', this)">Spridning</button>
+    <button class="tab" id="tab-ranking" onclick="switchView('ranking', this)">Ranking</button>
+    <button class="tab" id="tab-timeline" onclick="switchView('timeline', this)">Tidslinje</button>
+    <button class="tab" id="tab-levelprofile" onclick="switchView('levelprofile', this)">Per nivå</button>
+    <button class="tab" id="tab-subjectprofile" onclick="switchView('subjectprofile', this)">Per ämne</button>
+  </div>
+
+  <div id="table-container"></div>
+
+</div>
+
+<script>
+// ===== CONSTANTS =====
+
+const LEVEL_LABELS = {
+  'preschool':               'Förskola',
+  'primary0-3':              'Grundskola F-3',
+  'primary4-6':              'Grundskola 4-6',
+  'primary7-9':              'Grundskola 7-9',
+  'specialschoolprimary0-3': 'Anpassad grundskola 1-3',
+  'specialschoolprimary4-6': 'Anpassad grundskola 4-6',
+  'specialschoolprimary7-9': 'Anpassad grundskola 7-9',
+  'specialneedsschoolf-4':   'Specialskola F-4',
+  'specialneedsschool5-7':   'Specialskola 5-7',
+  'specialneedsschool8-10':  'Specialskola 8-10',
+  'secondary':               'Gymnasieskola',
+  'specialschoolsecondary':  'Anpassad gymnasieskola',
+  'university':              'Högskola',
+  'folkhighschool':          'Folkhögskola / Studieförbund',
+  'komvuxgrundvux':          'Komvux',
+  'specialschooladults':     'Komvux som anpassad utbildning',
+  'teachereducation':        'Lärarfortbildning',
+  'schoolvux':               'Allmänbildande',
+  'sfi':                     'Sfi',
+};
+
+const LEVEL_ORDER = Object.keys(LEVEL_LABELS);
+
+function labelLevel(key) {
+  return LEVEL_LABELS[key] || key;
+}
+
+// ===== STATE =====
+
+let allUsers        = [];
+let filteredUsers   = [];
+let currentView     = 'profiles';
+let sortMode        = 'count-desc';
+let selectedLevels   = new Set();
+let selectedSubjects = new Set();
+let selectedRole     = '';
+let allLevels       = [];
+let allSubjects     = [];
+let pairwiseSort        = { col: 'count', dir: -1 };
+let pairwiseRatingFilter = '';
+let profilesSort = { col: 'count', dir: -1 };
+let subjectProfileSort = { col: 'n', dir: -1 };
+let matrixMode = 'count';
+// ===== CSV PARSING =====
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function parseCSV(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]).map(h => h.trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const values = parseCSVLine(line);
+    const row = {};
+    headers.forEach((h, j) => { row[h] = (values[j] || '').trim(); });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function processRows(rows) {
+  return rows.map(row => {
+    const levels = row.age_ranges
+      ? row.age_ranges.split(';').map(s => s.trim()).filter(Boolean)
+      : [];
+    const subjects = row.subjects
+      ? row.subjects.split(';').map(s => s.trim()).filter(Boolean)
+      : [];
+    const sortedLevels = [...levels].sort((a, b) => {
+      const ai = LEVEL_ORDER.indexOf(a);
+      const bi = LEVEL_ORDER.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+    return {
+      id:        row.id,
+      createdAt: row.created_at ? new Date(row.created_at) : null,
+      levels:    sortedLevels,
+      subjects:  [...subjects].sort(),
+      role:      row.role,
+      complete:  levels.length > 0 && subjects.length > 0,
+    };
+  });
+}
+
+// ===== FILE HANDLING =====
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('header-filename').textContent = file.name;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parseCSV(e.target.result);
+    allUsers = processRows(rows);
+
+    // Collect unique levels and subjects
+    const levelsSet   = new Set();
+    const subjectsSet = new Set();
+    allUsers.forEach(u => {
+      u.levels.forEach(l   => levelsSet.add(l));
+      u.subjects.forEach(s => subjectsSet.add(s));
+    });
+
+    allLevels = [...levelsSet].sort((a, b) => {
+      const ai = LEVEL_ORDER.indexOf(a), bi = LEVEL_ORDER.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+    allSubjects = [...subjectsSet].sort((a, b) => a.localeCompare(b, 'sv'));
+
+    buildDropdown('levels',   allLevels,   labelLevel);
+    buildDropdown('subjects', allSubjects, s => s);
+
+    // Set default date range
+    const dates = allUsers.map(u => u.createdAt).filter(Boolean).sort((a, b) => a - b);
+    if (dates.length > 0) {
+      document.getElementById('filter-from').value = toDateInput(dates[0]);
+      document.getElementById('filter-to').value   = toDateInput(dates[dates.length - 1]);
+    }
+
+    document.getElementById('upload-section').style.display  = 'none';
+    document.getElementById('analysis-section').style.display = 'block';
+    applyFilters();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function toDateInput(d) {
+  return d.toISOString().split('T')[0];
+}
+
+// ===== DROPDOWN MULTI-SELECT =====
+
+function buildDropdown(type, items, labelFn) {
+  const container = document.getElementById(`${type}-items`);
+  container.innerHTML = items.map(item => `
+    <label class="dropdown-item">
+      <input type="checkbox" value="${escAttr(item)}" onchange="onDropdownChange('${type}')">
+      <span>${escHtml(labelFn(item))}</span>
+    </label>
+  `).join('');
+}
+
+function toggleDropdown(type, event) {
+  event.stopPropagation();
+  const panel = document.getElementById(`${type}-panel`);
+  const isOpen = panel.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('open'));
+  if (!isOpen) {
+    panel.classList.add('open');
+    panel.querySelector('.dropdown-search').focus();
+  }
+}
+
+function filterDropdownItems(type, query) {
+  const container = document.getElementById(`${type}-items`);
+  const q = query.toLowerCase();
+  container.querySelectorAll('.dropdown-item').forEach(item => {
+    item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function onDropdownChange(type) {
+  const checked = [...document.querySelectorAll(`#${type}-items input:checked`)].map(cb => cb.value);
+  if (type === 'levels')   selectedLevels   = new Set(checked);
+  else                     selectedSubjects = new Set(checked);
+  updateDropdownLabel(type);
+  applyFilters();
+}
+
+function updateDropdownLabel(type) {
+  const selected = type === 'levels' ? selectedLevels : selectedSubjects;
+  const trigger  = document.getElementById(`${type}-trigger`);
+  const labelFn  = type === 'levels' ? labelLevel : s => s;
+  const defLabel = type === 'levels' ? 'Alla nivåer' : 'Alla ämnen';
+
+  if (selected.size === 0) {
+    trigger.textContent = defLabel;
+    trigger.classList.remove('has-selection');
+  } else if (selected.size === 1) {
+    trigger.textContent = labelFn([...selected][0]);
+    trigger.classList.add('has-selection');
+  } else {
+    trigger.textContent = `${selected.size} valda`;
+    trigger.classList.add('has-selection');
+  }
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', () => {
+  document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('open'));
+});
+
+// ===== FILTERING =====
+
+function applyFilters() {
+  const fromVal  = document.getElementById('filter-from').value;
+  const toVal    = document.getElementById('filter-to').value;
+  const fromDate = fromVal ? new Date(fromVal + 'T00:00:00') : null;
+  const toDate   = toVal   ? new Date(toVal   + 'T23:59:59') : null;
+  selectedRole   = document.getElementById('filter-role').value;
+
+  filteredUsers = allUsers.filter(u => {
+    if (fromDate && u.createdAt && u.createdAt < fromDate) return false;
+    if (toDate   && u.createdAt && u.createdAt > toDate)   return false;
+    if (selectedRole) {
+      const roleMatch = selectedRole === '__empty__' ? !u.role : u.role === selectedRole;
+      if (!roleMatch) return false;
+    }
+    if (selectedLevels.size > 0   && !u.levels.some(l   => selectedLevels.has(l)))   return false;
+    if (selectedSubjects.size > 0 && !u.subjects.some(s => selectedSubjects.has(s))) return false;
+    return true;
+  });
+
+  updateStats();
+  renderCurrentView();
+}
+
+function resetFilters() {
+  const dates = allUsers.map(u => u.createdAt).filter(Boolean).sort((a, b) => a - b);
+  if (dates.length > 0) {
+    document.getElementById('filter-from').value = toDateInput(dates[0]);
+    document.getElementById('filter-to').value   = toDateInput(dates[dates.length - 1]);
+  }
+  selectedLevels   = new Set();
+  selectedSubjects = new Set();
+  document.getElementById('filter-role').value = '';
+  pairwiseRatingFilter = '';
+  pairwiseSort = { col: 'count', dir: -1 };
+  profilesSort = { col: 'count', dir: -1 };
+  subjectProfileSort = { col: 'n', dir: -1 };
+  matrixMode = 'count';
+  ['levels', 'subjects'].forEach(type => {
+    document.querySelectorAll(`#${type}-items input`).forEach(cb => cb.checked = false);
+    document.getElementById(`${type}-panel`).classList.remove('open');
+    updateDropdownLabel(type);
+  });
+  applyFilters();
+}
+
+// ===== STATS =====
+
+function updateStats() {
+  const complete   = filteredUsers.filter(u => u.complete);
+  const incomplete = filteredUsers.filter(u => !u.complete);
+
+  document.getElementById('stat-total').textContent    = allUsers.length.toLocaleString('sv');
+  document.getElementById('stat-filtered').textContent = filteredUsers.length.toLocaleString('sv');
+
+  const keys = new Set(complete.map(u => u.levels.join('|') + '::' + u.subjects.join('|')));
+  document.getElementById('stat-combos').textContent = keys.size.toLocaleString('sv');
+
+  const latest = filteredUsers.map(u => u.createdAt).filter(Boolean).sort((a, b) => b - a)[0];
+  document.getElementById('stat-latest').textContent = latest
+    ? latest.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : '–';
+
+  const notice = document.getElementById('incomplete-notice');
+  if (incomplete.length > 0) {
+    notice.style.display = 'block';
+    document.getElementById('incomplete-count').textContent = incomplete.length;
+
+    const roleCounts = {};
+    incomplete.forEach(u => {
+      const r = u.role || '(ingen roll)';
+      roleCounts[r] = (roleCounts[r] || 0) + 1;
+    });
+    const ROLE_LABELS = { teacher: 'lärare', student: 'elever', other: 'övriga', '(ingen roll)': 'utan roll' };
+    const parts = Object.entries(roleCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([r, n]) => `${n} ${ROLE_LABELS[r] || r}`);
+    document.getElementById('incomplete-breakdown').textContent = `(${parts.join(', ')})`;
+  } else {
+    notice.style.display = 'none';
+  }
+}
+
+// ===== VIEW =====
+
+function switchView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderCurrentView();
+}
+
+function renderCurrentView() {
+  if      (currentView === 'profiles')     renderProfiles();
+  else if (currentView === 'pairwise')     renderPairwise();
+  else if (currentView === 'distribution') renderDistribution();
+  else if (currentView === 'ranking')      renderRanking();
+  else if (currentView === 'timeline')     renderTimeline();
+  else if (currentView === 'levelprofile')   renderLevelProfile();
+  else if (currentView === 'subjectprofile') renderSubjectProfile();
+  else if (currentView === 'matrix')         renderMatrix();
+}
+
+// ===== RARITY =====
+
+function rarityBadge(count) {
+  if (count >= 5)  return '<span class="badge badge-common">Vanlig</span>';
+  if (count >= 2)  return '<span class="badge badge-unusual">Ovanlig</span>';
+  return '<span class="badge badge-rare">Unik</span>';
+}
+
+// ===== PROFILES VIEW =====
+
+function renderProfiles() {
+  const complete = filteredUsers.filter(u => u.complete);
+  const total    = complete.length;
+
+  if (total === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga fullständiga profiler matchar de valda filtren.</div></div>';
+    return;
+  }
+
+  // Group
+  const groups = {};
+  complete.forEach(u => {
+    const key = u.levels.join('|') + '::' + u.subjects.join('|');
+    if (!groups[key]) groups[key] = { levels: u.levels, subjects: u.subjects, count: 0 };
+    groups[key].count++;
+  });
+
+  let sorted = Object.values(groups);
+  sorted.sort((a, b) => (b.count - a.count) * profilesSort.dir);
+
+  const maxCount = Math.max(...sorted.map(g => g.count));
+
+  function pth(c, label, width) {
+    const active = profilesSort.col === c;
+    const arrow  = active ? (profilesSort.dir === -1 ? ' ↓' : ' ↑') : ' <span style="color:#d1d5db">⇅</span>';
+    return `<th style="width:${width};cursor:pointer;user-select:none" onclick="profilesSort={col:'${c}',dir:profilesSort.col==='${c}'?-profilesSort.dir:-1};renderCurrentView()">${label}${arrow}</th>`;
+  }
+
+  const rows = sorted.map((g) => {
+    const freqPct  = g.count / total * 100;
+    const freqStr  = freqPct < 0.1 ? freqPct.toFixed(2) : freqPct.toFixed(1);
+    const lvlTags  = g.levels.map(l => `<span class="tag tag-level">${escHtml(labelLevel(l))}</span>`).join(' ');
+    const subTags  = g.subjects.map(s => `<span class="tag tag-subject">${escHtml(s)}</span>`).join(' ');
+    const barW     = Math.round(g.count / maxCount * 100);
+
+    return `
+      <tr>
+        <td><div class="tags">${lvlTags || '<span style="color:#9ca3af">–</span>'}</div></td>
+        <td><div class="tags">${subTags || '<span style="color:#9ca3af">–</span>'}</div></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:80px;background:#f3f4f6;border-radius:3px;height:10px;flex-shrink:0">
+              <div style="width:${barW}%;background:#4f46e5;height:10px;border-radius:3px"></div>
+            </div>
+            <strong>${g.count}</strong>
+          </div>
+        </td>
+        <td>${freqStr}%</td>
+        <td>${rarityBadge(g.count)}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Fullständiga profiler</h3>
+        <span class="result-count">${sorted.length} unika kombinationer · ${total} användare med fullständiga profiler</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:28%">Utbildningsnivåer</th>
+            <th style="width:42%">Ämnen</th>
+            ${pth('count', 'Antal',     '8%')}
+            ${pth('freq',  '% av tot.', '8%')}
+            <th style="width:14%">Ovanlighet</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ===== PAIRWISE VIEW =====
+
+function renderPairwise() {
+  const complete = filteredUsers.filter(u => u.complete);
+  const total    = complete.length;
+
+  if (total === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga fullständiga profiler matchar de valda filtren.</div></div>';
+    return;
+  }
+
+  const levelCounts   = {};
+  const subjectCounts = {};
+  const pairCounts    = {};
+
+  complete.forEach(u => {
+    u.levels.forEach(l   => { levelCounts[l]   = (levelCounts[l]   || 0) + 1; });
+    u.subjects.forEach(s => { subjectCounts[s] = (subjectCounts[s] || 0) + 1; });
+    u.levels.forEach(l => {
+      u.subjects.forEach(s => {
+        const k = l + '\x00' + s;
+        pairCounts[k] = (pairCounts[k] || 0) + 1;
+      });
+    });
+  });
+
+  let pairs = Object.entries(pairCounts).map(([key, count]) => {
+    const [level, subject] = key.split('\x00');
+    const expected = (levelCounts[level] / total) * (subjectCounts[subject] / total) * total;
+    const ratio    = count / Math.max(expected, 0.001);
+    let ratingKey;
+    if      (ratio >= 3.0) ratingKey = 'very_common';
+    else if (ratio >= 1.3) ratingKey = 'common';
+    else if (ratio >= 0.7) ratingKey = 'expected';
+    else if (ratio >= 0.3) ratingKey = 'unusual';
+    else                   ratingKey = 'rare';
+    return { level, subject, count, expected, ratio, ratingKey };
+  });
+
+  // Apply rating filter
+  if (pairwiseRatingFilter) {
+    pairs = pairs.filter(p => p.ratingKey === pairwiseRatingFilter);
+  }
+
+  // Sort by pairwiseSort
+  const { col: pcol, dir: pdir } = pairwiseSort;
+  pairs.sort((a, b) => {
+    let av, bv;
+    if      (pcol === 'level')   { av = labelLevel(a.level); bv = labelLevel(b.level); }
+    else if (pcol === 'subject') { av = a.subject;            bv = b.subject; }
+    else                         { av = a[pcol];              bv = b[pcol]; }
+    return typeof av === 'string' ? av.localeCompare(bv, 'sv') * pdir : (av - bv) * pdir;
+  });
+
+  const rows = pairs.map((p) => {
+    let ratioBadge;
+    if      (p.ratio >= 3.0) ratioBadge = '<span class="badge badge-very-common">Mycket vanligare</span>';
+    else if (p.ratio >= 1.3) ratioBadge = '<span class="badge badge-common">Vanligare</span>';
+    else if (p.ratio >= 0.7) ratioBadge = '<span class="badge badge-expected">Ungefär förväntat</span>';
+    else if (p.ratio >= 0.3) ratioBadge = '<span class="badge badge-unusual">Ovanligare</span>';
+    else                     ratioBadge = '<span class="badge badge-rare">Mycket ovanlig</span>';
+
+    const ratioStr = p.ratio < 10 ? p.ratio.toFixed(2) + '×' : Math.round(p.ratio) + '×';
+    const expStr   = p.expected < 1 ? p.expected.toFixed(1) : Math.round(p.expected);
+
+    return `
+      <tr>
+        <td><span class="tag tag-level">${escHtml(labelLevel(p.level))}</span></td>
+        <td><span class="tag tag-subject">${escHtml(p.subject)}</span></td>
+        <td><strong>${p.count}</strong></td>
+        <td style="color:#6b7280">${expStr}</td>
+        <td><strong>${ratioStr}</strong></td>
+        <td>${ratioBadge}</td>
+      </tr>`;
+  }).join('');
+
+  function pth(c, label, width) {
+    const active = pairwiseSort.col === c;
+    const arrow  = active ? (pairwiseSort.dir === -1 ? ' ↓' : ' ↑') : ' <span style="color:#d1d5db">⇅</span>';
+    return `<th style="width:${width};cursor:pointer;user-select:none" onclick="pairwiseSort={col:'${c}',dir:pairwiseSort.col==='${c}'?-pairwiseSort.dir:-1};renderCurrentView()">${label}${arrow}</th>`;
+  }
+
+  const ratingOptions = [
+    ['',            'Alla'],
+    ['very_common', 'Mycket vanligare'],
+    ['common',      'Vanligare'],
+    ['expected',    'Ungefär förväntat'],
+    ['unusual',     'Ovanligare'],
+    ['rare',        'Mycket ovanlig'],
+  ];
+  const filterPills = ratingOptions.map(([val, label]) => {
+    const active = pairwiseRatingFilter === val;
+    return `<button onclick="pairwiseRatingFilter='${val}';renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${active ? '#4f46e5' : '#e5e7eb'};background:${active ? '#ede9fe' : 'white'};color:${active ? '#4f46e5' : '#6b7280'};font-weight:${active ? '600' : '400'}">${escHtml(label)}</button>`;
+  }).join('');
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Parvisa kombinationer (utbildningsnivå × ämne)</h3>
+        <span class="result-count">${pairs.length} par visas · <em>Obs/Förv</em> visar hur ofta paret förekommer jämfört med om nivå och ämne vore oberoende</span>
+      </div>
+      <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">Bedömning:</span>
+        ${filterPills}
+      </div>
+      <table>
+        <thead>
+          <tr>
+            ${pth('level',    'Utbildningsnivå', '22%')}
+            ${pth('subject',  'Ämne',            '28%')}
+            ${pth('count',    'Antal',           '10%')}
+            ${pth('expected', 'Förväntat',       '10%')}
+            ${pth('ratio',    'Obs/Förv',        '10%')}
+            <th style="width:20%">Bedömning</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ===== DISTRIBUTION VIEW =====
+
+function renderDistribution() {
+  const users = filteredUsers;
+  const total = users.length;
+
+  if (total === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga användare matchar de valda filtren.</div></div>';
+    return;
+  }
+
+  const levelDist   = {};
+  const subjectDist = {};
+
+  users.forEach(u => {
+    const lc = u.levels.length;
+    const sc = u.subjects.length;
+    levelDist[lc]   = (levelDist[lc]   || 0) + 1;
+    subjectDist[sc] = (subjectDist[sc] || 0) + 1;
+  });
+
+  const maxLevelCount   = Math.max(...Object.values(levelDist));
+  const maxSubjectCount = Math.max(...Object.values(subjectDist));
+
+  function buildRows(dist, maxCount, barClass) {
+    const keys = Object.keys(dist).map(Number).sort((a, b) => a - b);
+    return keys.map(k => {
+      const count  = dist[k];
+      const pct    = (count / total * 100);
+      const pctStr = pct < 0.1 ? pct.toFixed(2) : pct.toFixed(1);
+      const barW   = Math.round(count / maxCount * 100);
+      const label  = k;
+      return `
+        <div class="dist-row">
+          <span class="dist-key">${label}</span>
+          <div class="dist-bar-wrap">
+            <div class="dist-bar ${barClass}" style="width:${barW}%"></div>
+          </div>
+          <span class="dist-count">${count.toLocaleString('sv')} &nbsp;<span style="color:#9ca3af">${pctStr}%</span></span>
+        </div>`;
+    }).join('');
+  }
+
+  const levelMean   = (users.reduce((s, u) => s + u.levels.length, 0)   / total).toFixed(1);
+  const subjectMean = (users.reduce((s, u) => s + u.subjects.length, 0) / total).toFixed(1);
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="dist-grid">
+      <div class="table-card">
+        <div class="table-header-row">
+          <h3>Utbildningsnivåer per användare</h3>
+          <span class="result-count">Snitt: ${levelMean} val · ${total.toLocaleString('sv')} användare</span>
+        </div>
+        <div style="padding: 12px 20px">
+          ${buildRows(levelDist, maxLevelCount, 'dist-bar-level')}
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-header-row">
+          <h3>Ämnen per användare</h3>
+          <span class="result-count">Snitt: ${subjectMean} val · ${total.toLocaleString('sv')} användare</span>
+        </div>
+        <div style="padding: 12px 20px">
+          ${buildRows(subjectDist, maxSubjectCount, 'dist-bar-subject')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ===== RANKING VIEW =====
+
+function renderRanking() {
+  const users = filteredUsers;
+  const total = users.length;
+
+  if (total === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga användare matchar de valda filtren.</div></div>';
+    return;
+  }
+
+  const levelFreq   = {};
+  const subjectFreq = {};
+  users.forEach(u => {
+    u.levels.forEach(l   => { levelFreq[l]   = (levelFreq[l]   || 0) + 1; });
+    u.subjects.forEach(s => { subjectFreq[s] = (subjectFreq[s] || 0) + 1; });
+  });
+
+  const sortedLevels   = Object.entries(levelFreq).sort((a, b) => b[1] - a[1]);
+  const sortedSubjects = Object.entries(subjectFreq).sort((a, b) => b[1] - a[1]);
+
+  const noLevels   = users.filter(u => u.levels.length === 0).length;
+  const noSubjects = users.filter(u => u.subjects.length === 0).length;
+  if (noLevels > 0)   sortedLevels.push(['__none__', noLevels]);
+  if (noSubjects > 0) sortedSubjects.push(['__none__', noSubjects]);
+
+  const maxLF = Math.max(...sortedLevels.map(e => e[1]),   1);
+  const maxSF = Math.max(...sortedSubjects.map(e => e[1]), 1);
+
+  function buildFreqRows(entries, maxCount, barClass, labelFn) {
+    return entries.map(([key, count]) => {
+      const pct    = count / total * 100;
+      const pctStr = pct < 0.1 ? pct.toFixed(2) : pct.toFixed(1);
+      const barW   = Math.round(count / maxCount * 100);
+      if (key === '__none__') {
+        return `
+        <div class="dist-row">
+          <span class="dist-key-wide" style="color:#9ca3af;font-style:italic">(Inget val)</span>
+          <div class="dist-bar-wrap">
+            <div class="dist-bar" style="background:#d1d5db;width:${barW}%"></div>
+          </div>
+          <span class="dist-count">${count.toLocaleString('sv')} &nbsp;<span style="color:#9ca3af">${pctStr}%</span></span>
+        </div>`;
+      }
+      return `
+        <div class="dist-row">
+          <span class="dist-key-wide">${escHtml(labelFn(key))}</span>
+          <div class="dist-bar-wrap">
+            <div class="dist-bar ${barClass}" style="width:${barW}%"></div>
+          </div>
+          <span class="dist-count">${count.toLocaleString('sv')} &nbsp;<span style="color:#9ca3af">${pctStr}%</span></span>
+        </div>`;
+    }).join('');
+  }
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="dist-grid">
+      <div class="table-card">
+        <div class="table-header-row">
+          <h3>Vanligaste utbildningsnivåerna</h3>
+          <span class="result-count">Andel användare som valt respektive nivå</span>
+        </div>
+        <div style="padding: 12px 20px">
+          ${buildFreqRows(sortedLevels, maxLF, 'dist-bar-level', labelLevel)}
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-header-row">
+          <h3>Vanligaste ämnena</h3>
+          <span class="result-count">Andel användare som valt respektive ämne</span>
+        </div>
+        <div style="padding: 12px 20px">
+          ${buildFreqRows(sortedSubjects, maxSF, 'dist-bar-subject', s => s)}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ===== TIMELINE VIEW =====
+
+function renderTimeline() {
+  const users   = filteredUsers;
+  const fromVal = document.getElementById('filter-from').value;
+  const toVal   = document.getElementById('filter-to').value;
+
+  if (!fromVal || !toVal || users.length === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Ange ett datumintervall för att visa tidslinjen.</div></div>';
+    return;
+  }
+
+  const fromDate = new Date(fromVal + 'T00:00:00');
+  const toDate   = new Date(toVal   + 'T23:59:59');
+  const diffDays = (toDate - fromDate) / 86400000;
+  const byHour   = diffDays <= 2;
+
+  // Helper: local-time key for a date
+  function slotKey(d) {
+    const y  = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    if (byHour) return `${y}-${mo}-${da}T${String(d.getHours()).padStart(2, '0')}`;
+    return `${y}-${mo}-${da}`;
+  }
+
+  // Build ordered slots covering the full range
+  const slots = {};
+  const cursor = new Date(fromDate);
+  if (byHour) cursor.setMinutes(0, 0, 0);
+  else        cursor.setHours(0, 0, 0, 0);
+  while (cursor <= toDate) {
+    slots[slotKey(cursor)] = 0;
+    byHour ? cursor.setHours(cursor.getHours() + 1) : cursor.setDate(cursor.getDate() + 1);
+  }
+
+  // Count registrations per slot
+  users.forEach(u => {
+    if (!u.createdAt) return;
+    const k = slotKey(u.createdAt);
+    if (k in slots) slots[k]++;
+  });
+
+  const entries  = Object.entries(slots);
+  const maxCount = Math.max(...Object.values(slots), 1);
+  const total    = users.filter(u => u.createdAt).length;
+  const barW     = byHour ? 32 : Math.max(14, Math.min(40, Math.floor(960 / entries.length)));
+
+  const bars = entries.map(([key, count], i) => {
+    const barH   = count > 0 ? Math.max(4, Math.round(count / maxCount * 180)) : 0;
+    const filled = count > 0;
+
+    let label, sublabel = '';
+    if (byHour) {
+      const h = key.slice(11);
+      label = h + ':00';
+      // Show date when it changes
+      if (i === 0 || key.slice(0, 10) !== entries[i - 1][0].slice(0, 10)) {
+        const d = new Date(key.slice(0, 10));
+        sublabel = d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+      }
+    } else {
+      const d = new Date(key + 'T12:00:00');
+      label = d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+    }
+
+    return `
+      <div class="chart-col" style="width:${barW}px">
+        <div class="chart-col-body">
+          <span class="chart-count">${count > 0 ? count : ''}</span>
+          <div class="chart-bar ${filled ? 'chart-bar-filled' : 'chart-bar-empty'}" style="height:${filled ? barH : 3}px; width:${barW - 3}px"></div>
+        </div>
+        <span class="chart-label">${label}</span>
+        <span class="chart-label-day">${sublabel}</span>
+      </div>`;
+  }).join('');
+
+  const granLabel = byHour ? 'per timme' : 'per dag';
+  document.getElementById('table-container').innerHTML = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Nyregistreringar</h3>
+        <span class="result-count">${total.toLocaleString('sv')} registreringar · ${granLabel} · ${entries.length} perioder</span>
+      </div>
+      <div class="chart-outer">
+        <div class="chart-inner">${bars}</div>
+      </div>
+    </div>`;
+}
+
+// ===== LEVEL PROFILE VIEW =====
+
+let levelProfileSort = { col: 'users', dir: -1 };
+
+function renderLevelProfile() {
+  const users = filteredUsers;
+
+  if (users.length === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga användare matchar de valda filtren.</div></div>';
+    return;
+  }
+
+  // For each level, collect all users who have that level
+  const levelMap = {};
+  users.forEach(u => {
+    u.levels.forEach(l => {
+      if (!levelMap[l]) levelMap[l] = [];
+      levelMap[l].push(u);
+    });
+  });
+
+  let rows = Object.entries(levelMap).map(([level, lvlUsers]) => {
+    const n           = lvlUsers.length;
+    const avgLevels   = lvlUsers.reduce((s, u) => s + u.levels.length,   0) / n;
+    const avgSubjects = lvlUsers.reduce((s, u) => s + u.subjects.length, 0) / n;
+    return { level, n, avgLevels, avgSubjects };
+  });
+
+  // Add __none__ row for users without any level
+  const noneUsers = users.filter(u => u.levels.length === 0);
+  if (noneUsers.length > 0) {
+    const avgSubjects = noneUsers.reduce((s, u) => s + u.subjects.length, 0) / noneUsers.length;
+    rows.push({ level: '__none__', n: noneUsers.length, avgLevels: 0, avgSubjects });
+  }
+
+  const { col, dir } = levelProfileSort;
+  rows.sort((a, b) => {
+    const labelA = a.level === '__none__' ? '(Inget val)' : labelLevel(a.level);
+    const labelB = b.level === '__none__' ? '(Inget val)' : labelLevel(b.level);
+    const av = col === 'level' ? labelA : a[col];
+    const bv = col === 'level' ? labelB : b[col];
+    return typeof av === 'string' ? av.localeCompare(bv, 'sv') * dir : (av - bv) * dir;
+  });
+
+  const maxN           = Math.max(...rows.map(r => r.n));
+  const maxAvgLevels   = Math.max(...rows.map(r => r.avgLevels),   0.001);
+  const maxAvgSubjects = Math.max(...rows.map(r => r.avgSubjects), 0.001);
+
+  // Total row data
+  const totalN          = users.length;
+  const totalAvgLevels   = (users.reduce((s, u) => s + u.levels.length,   0) / totalN).toFixed(1);
+  const totalAvgSubjects = (users.reduce((s, u) => s + u.subjects.length, 0) / totalN).toFixed(1);
+
+  function arrow(c) {
+    if (c !== col) return '<span style="color:#d1d5db">⇅</span>';
+    return dir === -1 ? '↓' : '↑';
+  }
+  function th(c, label) {
+    return `<th style="cursor:pointer;user-select:none" onclick="levelProfileSort={col:'${c}',dir:levelProfileSort.col==='${c}'?-levelProfileSort.dir:-1};renderCurrentView()">${label} ${arrow(c)}</th>`;
+  }
+
+  function miniBar(value, max, color, opts = {}) {
+    const w       = Math.round(value / max * 100);
+    const display = opts.fmt ? opts.fmt(value) : value;
+    const inner   = opts.bold ? `<strong>${display}</strong>` : `<span>${display}</span>`;
+    return `<div style="display:flex;align-items:center;gap:8px">
+      <div style="width:80px;background:#f3f4f6;border-radius:3px;height:10px;flex-shrink:0">
+        <div style="width:${w}%;background:${color};height:10px;border-radius:3px"></div>
+      </div>
+      ${inner}
+    </div>`;
+  }
+
+  const toFixed1 = v => v.toFixed(1);
+
+  const tableRows = rows.map(r => {
+    const noneRow = r.level === '__none__';
+    const nColor  = noneRow ? '#d1d5db' : '#7c3aed';
+    return `
+      <tr>
+        <td>${noneRow
+          ? '<span style="color:#9ca3af;font-style:italic">(Inget val)</span>'
+          : `<span class="tag tag-level">${escHtml(labelLevel(r.level))}</span>`}
+        </td>
+        <td>${miniBar(r.n,           maxN,           nColor,                            { bold: true })}</td>
+        <td>${miniBar(r.avgLevels,   maxAvgLevels,   noneRow ? '#d1d5db' : '#4f46e5', { fmt: toFixed1 })}</td>
+        <td>${miniBar(r.avgSubjects, maxAvgSubjects, noneRow ? '#d1d5db' : '#0369a1', { fmt: toFixed1 })}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Profil per utbildningsnivå</h3>
+        <span class="result-count">Klicka kolumnrubrik för att sortera · ${totalN.toLocaleString('sv')} användare</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            ${th('level',       'Utbildningsnivå')}
+            ${th('n',           'Antal användare')}
+            ${th('avgLevels',   'Snitt nivåval')}
+            ${th('avgSubjects', 'Snitt ämnesval')}
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+        <tfoot>
+          <tr style="border-top:2px solid #e5e7eb;font-weight:600">
+            <td>Totalt (genomsnitt)</td>
+            <td><strong>${totalN.toLocaleString('sv')}</strong></td>
+            <td>${totalAvgLevels}</td>
+            <td>${totalAvgSubjects}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+// ===== SUBJECT PROFILE VIEW =====
+
+function renderSubjectProfile() {
+  const users = filteredUsers;
+
+  if (users.length === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga användare matchar de valda filtren.</div></div>';
+    return;
+  }
+
+  const subjectMap = {};
+  users.forEach(u => {
+    u.subjects.forEach(s => {
+      if (!subjectMap[s]) subjectMap[s] = [];
+      subjectMap[s].push(u);
+    });
+  });
+
+  let rows = Object.entries(subjectMap).map(([subject, subUsers]) => {
+    const n           = subUsers.length;
+    const avgSubjects = subUsers.reduce((s, u) => s + u.subjects.length, 0) / n;
+    const avgLevels   = subUsers.reduce((s, u) => s + u.levels.length,   0) / n;
+    return { subject, n, avgSubjects, avgLevels };
+  });
+
+  const noneUsers = users.filter(u => u.subjects.length === 0);
+  if (noneUsers.length > 0) {
+    const avgLevels = noneUsers.reduce((s, u) => s + u.levels.length, 0) / noneUsers.length;
+    rows.push({ subject: '__none__', n: noneUsers.length, avgSubjects: 0, avgLevels });
+  }
+
+  const { col, dir } = subjectProfileSort;
+  rows.sort((a, b) => {
+    const labelA = a.subject === '__none__' ? '(Inget val)' : a.subject;
+    const labelB = b.subject === '__none__' ? '(Inget val)' : b.subject;
+    const av = col === 'subject' ? labelA : a[col];
+    const bv = col === 'subject' ? labelB : b[col];
+    return typeof av === 'string' ? av.localeCompare(bv, 'sv') * dir : (av - bv) * dir;
+  });
+
+  const maxN           = Math.max(...rows.map(r => r.n));
+  const maxAvgSubjects = Math.max(...rows.map(r => r.avgSubjects), 0.001);
+  const maxAvgLevels   = Math.max(...rows.map(r => r.avgLevels),   0.001);
+
+  const totalN          = users.length;
+  const totalAvgSubjects = (users.reduce((s, u) => s + u.subjects.length, 0) / totalN).toFixed(1);
+  const totalAvgLevels   = (users.reduce((s, u) => s + u.levels.length,   0) / totalN).toFixed(1);
+
+  function arrow(c) {
+    if (c !== col) return '<span style="color:#d1d5db">⇅</span>';
+    return dir === -1 ? '↓' : '↑';
+  }
+  function th(c, label) {
+    return `<th style="cursor:pointer;user-select:none" onclick="subjectProfileSort={col:'${c}',dir:subjectProfileSort.col==='${c}'?-subjectProfileSort.dir:-1};renderCurrentView()">${label} ${arrow(c)}</th>`;
+  }
+
+  function miniBar(value, max, color, opts = {}) {
+    const w       = Math.round(value / max * 100);
+    const display = opts.fmt ? opts.fmt(value) : value;
+    const inner   = opts.bold ? `<strong>${display}</strong>` : `<span>${display}</span>`;
+    return `<div style="display:flex;align-items:center;gap:8px">
+      <div style="width:80px;background:#f3f4f6;border-radius:3px;height:10px;flex-shrink:0">
+        <div style="width:${w}%;background:${color};height:10px;border-radius:3px"></div>
+      </div>
+      ${inner}
+    </div>`;
+  }
+
+  const toFixed1 = v => v.toFixed(1);
+
+  const tableRows = rows.map(r => {
+    const noneRow = r.subject === '__none__';
+    const nColor  = noneRow ? '#d1d5db' : '#0369a1';
+    return `
+      <tr>
+        <td>${noneRow
+          ? '<span style="color:#9ca3af;font-style:italic">(Inget val)</span>'
+          : `<span class="tag tag-subject">${escHtml(r.subject)}</span>`}
+        </td>
+        <td>${miniBar(r.n,           maxN,           nColor,                            { bold: true })}</td>
+        <td>${miniBar(r.avgSubjects, maxAvgSubjects, noneRow ? '#d1d5db' : '#0369a1', { fmt: toFixed1 })}</td>
+        <td>${miniBar(r.avgLevels,   maxAvgLevels,   noneRow ? '#d1d5db' : '#4f46e5', { fmt: toFixed1 })}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Profil per ämne</h3>
+        <span class="result-count">Klicka kolumnrubrik för att sortera · ${totalN.toLocaleString('sv')} användare</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            ${th('subject',     'Ämne')}
+            ${th('n',           'Antal användare')}
+            ${th('avgSubjects', 'Snitt ämnesval')}
+            ${th('avgLevels',   'Snitt nivåval')}
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+        <tfoot>
+          <tr style="border-top:2px solid #e5e7eb;font-weight:600">
+            <td>Totalt (genomsnitt)</td>
+            <td><strong>${totalN.toLocaleString('sv')}</strong></td>
+            <td>${totalAvgSubjects}</td>
+            <td>${totalAvgLevels}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+// ===== MATRIX VIEW =====
+
+function renderMatrix() {
+  const complete = filteredUsers.filter(u => u.complete);
+  const total    = complete.length;
+
+  if (total === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga fullständiga profiler matchar de valda filtren.</div></div>';
+    return;
+  }
+
+  const levelCounts   = {};
+  const subjectCounts = {};
+  const pairCounts    = {};
+
+  complete.forEach(u => {
+    u.levels.forEach(l   => { levelCounts[l]   = (levelCounts[l]   || 0) + 1; });
+    u.subjects.forEach(s => { subjectCounts[s] = (subjectCounts[s] || 0) + 1; });
+    u.levels.forEach(l => {
+      u.subjects.forEach(s => {
+        const k = l + '\x00' + s;
+        pairCounts[k] = (pairCounts[k] || 0) + 1;
+      });
+    });
+  });
+
+  const levels   = LEVEL_ORDER.filter(l => levelCounts[l] > 0);
+  const subjects = Object.keys(subjectCounts).sort((a, b) => a.localeCompare(b, 'sv'));
+
+  function cellColor(count, ratio) {
+    if (count === 0) return 'background:white';
+    if (ratio >= 3.0) return 'background:#6ee7b7';
+    if (ratio >= 1.3) return 'background:#d1fae5';
+    if (ratio >= 0.7) return 'background:#f9fafb';
+    if (ratio >= 0.3) return 'background:#fef3c7';
+    return 'background:#fee2e2';
+  }
+
+  const colHeaders = subjects.map(s => {
+    const truncated = s.length > 22 ? s.slice(0, 21) + '…' : s;
+    return `<th class="matrix-col-header" title="${escAttr(s)}">${escHtml(truncated)}</th>`;
+  }).join('');
+
+  const tableRows = levels.map(l => {
+    const levelTotal = levelCounts[l] || 0;
+    const cells = subjects.map(s => {
+      const count    = pairCounts[l + '\x00' + s] || 0;
+      const expected = (levelCounts[l] / total) * (subjectCounts[s] / total) * total;
+      const ratio    = count / Math.max(expected, 0.001);
+      const style    = cellColor(count, ratio);
+      const display  = matrixMode === 'count'
+        ? (count > 0 ? count : '')
+        : (count > 0 ? ratio.toFixed(1) + '×' : '');
+      const tip = count > 0
+        ? `${count} användare · ${ratio.toFixed(2)}× förväntat`
+        : 'Ingen data';
+      return `<td class="matrix-cell" style="${style}" title="${escAttr(tip)}">${escHtml(String(display))}</td>`;
+    }).join('');
+
+    return `
+      <tr>
+        <td class="matrix-row-header"><span class="tag tag-level">${escHtml(labelLevel(l))}</span></td>
+        <td class="matrix-total-cell">${levelTotal}</td>
+        ${cells}
+      </tr>`;
+  }).join('');
+
+  // Subject totals row
+  const subjectTotals = subjects.map(s =>
+    `<td class="matrix-cell" style="background:#f9fafb;font-weight:600">${subjectCounts[s]}</td>`
+  ).join('');
+
+  const modePills = [['count', 'Antal'], ['ratio', 'Obs/Förv']].map(([val, label]) => {
+    const active = matrixMode === val;
+    return `<button onclick="matrixMode='${val}';renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${active ? '#4f46e5' : '#e5e7eb'};background:${active ? '#ede9fe' : 'white'};color:${active ? '#4f46e5' : '#6b7280'};font-weight:${active ? '600' : '400'}">${label}</button>`;
+  }).join('');
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Matris: utbildningsnivå × ämne</h3>
+        <span class="result-count">${levels.length} nivåer · ${subjects.length} ämnen · färg visar Obs/Förv-kvot</span>
+      </div>
+      <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center">
+        <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">Cellvärde:</span>
+        ${modePills}
+      </div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th class="matrix-row-header" style="background:#f9fafb;z-index:3">Nivå</th>
+              <th class="matrix-total-cell" style="background:#f9fafb;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;vertical-align:bottom;padding:6px 8px">Totalt</th>
+              ${colHeaders}
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+          <tfoot>
+            <tr style="border-top:2px solid #e5e7eb">
+              <td class="matrix-row-header" style="font-weight:600;background:#f9fafb">Totalt</td>
+              <td class="matrix-total-cell" style="font-weight:600;background:#f9fafb">${total}</td>
+              ${subjectTotals}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ===== HELPERS =====
+
+function escHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g,  '&amp;')
+    .replace(/</g,  '&lt;')
+    .replace(/>/g,  '&gt;')
+    .replace(/"/g,  '&quot;')
+    .replace(/'/g,  '&#39;');
+}
+
+function escAttr(str) {
+  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+</script>
+</body>
+</html>

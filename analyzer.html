@@ -638,6 +638,7 @@ function handleFile(input) {
 
     document.getElementById('upload-section').style.display  = 'none';
     document.getElementById('analysis-section').style.display = 'block';
+    document.getElementById('filter-role').value = 'teacher';
     applyFilters();
   };
   reader.readAsText(file, 'UTF-8');
@@ -743,7 +744,7 @@ function resetFilters() {
   }
   selectedLevels   = new Set();
   selectedSubjects = new Set();
-  document.getElementById('filter-role').value = '';
+  document.getElementById('filter-role').value = 'teacher';
   pairwiseRatingFilter = '';
   pairwiseSort = { col: 'count', dir: -1 };
   profilesSort = { col: 'count', dir: -1 };

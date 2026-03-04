@@ -465,10 +465,11 @@
 
   <div class="tabs">
     <button class="tab active" id="tab-profiles" onclick="switchView('profiles', this)">Fullständiga profiler (rådata)</button>
-    <button class="tab" id="tab-pairwise" onclick="switchView('pairwise', this)">Parvisa kombinationer</button>
-    <button class="tab" id="tab-matrix" onclick="switchView('matrix', this)">Matris</button>
     <button class="tab" id="tab-distribution" onclick="switchView('distribution', this)">Spridning</button>
     <button class="tab" id="tab-ranking" onclick="switchView('ranking', this)">Ranking</button>
+    <button class="tab" id="tab-pairwise" onclick="switchView('pairwise', this)">Kombinationer (tabell)</button>
+    <button class="tab" id="tab-matrix" onclick="switchView('matrix', this)">Kombinationer (matris)</button>
+    <button class="tab" id="tab-leveloverlap" onclick="switchView('leveloverlap', this)">Nivåöverlapp</button>
     <button class="tab" id="tab-timeline" onclick="switchView('timeline', this)">Tidslinje</button>
     <button class="tab" id="tab-levelprofile" onclick="switchView('levelprofile', this)">Per nivå</button>
     <button class="tab" id="tab-subjectprofile" onclick="switchView('subjectprofile', this)">Per ämne</button>
@@ -525,6 +526,8 @@ let pairwiseRatingFilter = '';
 let profilesSort = { col: 'count', dir: -1 };
 let subjectProfileSort = { col: 'n', dir: -1 };
 let matrixMode = 'count';
+let levelOverlapMode = 'pct';   // 'pct' | 'count'
+let levelProfileExact = false;  // false = "Visa alla", true = "Exakta val"
 // ===== CSV PARSING =====
 
 function parseCSVLine(line) {
@@ -746,6 +749,8 @@ function resetFilters() {
   profilesSort = { col: 'count', dir: -1 };
   subjectProfileSort = { col: 'n', dir: -1 };
   matrixMode = 'count';
+  levelOverlapMode = 'pct';
+  levelProfileExact = false;
   ['levels', 'subjects'].forEach(type => {
     document.querySelectorAll(`#${type}-items input`).forEach(cb => cb.checked = false);
     document.getElementById(`${type}-panel`).classList.remove('open');
@@ -809,6 +814,7 @@ function renderCurrentView() {
   else if (currentView === 'levelprofile')   renderLevelProfile();
   else if (currentView === 'subjectprofile') renderSubjectProfile();
   else if (currentView === 'matrix')         renderMatrix();
+  else if (currentView === 'leveloverlap')   renderLevelOverlap();
 }
 
 // ===== RARITY =====
@@ -840,7 +846,7 @@ function renderProfiles() {
   });
 
   let sorted = Object.values(groups);
-  sorted.sort((a, b) => (b.count - a.count) * profilesSort.dir);
+  sorted.sort((a, b) => (a.count - b.count) * profilesSort.dir);
 
   const maxCount = Math.max(...sorted.map(g => g.count));
 
@@ -1270,14 +1276,24 @@ function renderLevelProfile() {
     return;
   }
 
-  // For each level, collect all users who have that level
+  // For each level, collect users — either all or only single-level users
   const levelMap = {};
-  users.forEach(u => {
-    u.levels.forEach(l => {
-      if (!levelMap[l]) levelMap[l] = [];
-      levelMap[l].push(u);
+  if (levelProfileExact) {
+    users.forEach(u => {
+      if (u.levels.length === 1) {
+        const l = u.levels[0];
+        if (!levelMap[l]) levelMap[l] = [];
+        levelMap[l].push(u);
+      }
     });
-  });
+  } else {
+    users.forEach(u => {
+      u.levels.forEach(l => {
+        if (!levelMap[l]) levelMap[l] = [];
+        levelMap[l].push(u);
+      });
+    });
+  }
 
   let rows = Object.entries(levelMap).map(([level, lvlUsers]) => {
     const n           = lvlUsers.length;
@@ -1352,7 +1368,11 @@ function renderLevelProfile() {
     <div class="table-card">
       <div class="table-header-row">
         <h3>Profil per utbildningsnivå</h3>
-        <span class="result-count">Klicka kolumnrubrik för att sortera · ${totalN.toLocaleString('sv')} användare</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="result-count">${levelProfileExact ? 'Exakta val: användare med exakt en nivå' : 'Alla användare per nivå'} · Klicka rubrik för att sortera · ${totalN.toLocaleString('sv')} användare</span>
+          <button onclick="levelProfileExact=false;renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${!levelProfileExact ? '#4f46e5' : '#e5e7eb'};background:${!levelProfileExact ? '#ede9fe' : 'white'};color:${!levelProfileExact ? '#4f46e5' : '#6b7280'};font-weight:${!levelProfileExact ? '600' : '400'}">Visa alla</button>
+          <button onclick="levelProfileExact=true;renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${levelProfileExact ? '#4f46e5' : '#e5e7eb'};background:${levelProfileExact ? '#ede9fe' : 'white'};color:${levelProfileExact ? '#4f46e5' : '#6b7280'};font-weight:${levelProfileExact ? '600' : '400'}">Exakta val</button>
+        </div>
       </div>
       <table>
         <thead>
@@ -1595,6 +1615,115 @@ function renderMatrix() {
               ${subjectTotals}
             </tr>
           </tfoot>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ===== LEVEL OVERLAP VIEW =====
+
+function overlapCellStyle(n, pct) {
+  if (n === 0)   return 'background:#ffffff';
+  if (pct >= 70) return 'background:#e11d48;color:white';
+  if (pct >= 40) return 'background:#fb7185';
+  if (pct >= 15) return 'background:#fecdd3';
+  return 'background:#fff1f2';
+}
+
+function renderLevelOverlap() {
+  // Use all filteredUsers — only levels matter here, subjects are irrelevant
+  const users = filteredUsers;
+
+  if (users.length === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga användare matchar de valda filtren.</div></div>';
+    return;
+  }
+
+  // Step 1: per-level user counts (denominator for row percentages)
+  const levelCount = {};
+  users.forEach(u => {
+    u.levels.forEach(l => { levelCount[l] = (levelCount[l] || 0) + 1; });
+  });
+
+  // Step 2: directional co-occurrence — coCount[L1][L2] = users with BOTH L1 and L2
+  const coCount = {};
+  users.forEach(u => {
+    const ls = u.levels;
+    for (let i = 0; i < ls.length; i++) {
+      for (let j = 0; j < ls.length; j++) {
+        if (i === j) continue;
+        if (!coCount[ls[i]]) coCount[ls[i]] = {};
+        coCount[ls[i]][ls[j]] = (coCount[ls[i]][ls[j]] || 0) + 1;
+      }
+    }
+  });
+
+  // Step 3: levels in canonical order with at least 1 user
+  const levels = LEVEL_ORDER.filter(l => levelCount[l] > 0);
+
+  // Step 4: column headers (truncated with tooltip)
+  const colHeaders = levels.map(l => {
+    const lbl = labelLevel(l);
+    const truncated = lbl.length > 20 ? lbl.slice(0, 19) + '…' : lbl;
+    return `<th class="matrix-col-header" title="${escAttr(lbl)}">${escHtml(truncated)}</th>`;
+  }).join('');
+
+  // Step 5: data rows
+  const tableRows = levels.map(rowLevel => {
+    const nRow = levelCount[rowLevel] || 0;
+    const rowLabel = labelLevel(rowLevel);
+    const cells = levels.map(colLevel => {
+      if (rowLevel === colLevel) {
+        return `<td class="matrix-cell" style="background:#f3f4f6;color:#9ca3af" title="Samma nivå">–</td>`;
+      }
+      const n = (coCount[rowLevel] && coCount[rowLevel][colLevel]) || 0;
+      const pct = nRow > 0 ? (n / nRow * 100) : 0;
+      const style = overlapCellStyle(n, pct);
+      const display = levelOverlapMode === 'pct'
+        ? (n > 0 ? Math.round(pct) + '%' : '')
+        : (n > 0 ? n : '');
+      const tip = n > 0
+        ? `${n} av ${nRow} ${escAttr(rowLabel)}-användare valde även ${escAttr(labelLevel(colLevel))} (${Math.round(pct)}%)`
+        : 'Ingen överlapp';
+      return `<td class="matrix-cell" style="${style}" title="${escAttr(tip)}">${escHtml(String(display))}</td>`;
+    }).join('');
+
+    return `
+      <tr>
+        <td class="matrix-row-header">
+          <span class="tag tag-level">${escHtml(rowLabel)}</span>
+          <span style="font-size:11px;color:#6b7280;margin-left:4px">(n=${nRow})</span>
+        </td>
+        ${cells}
+      </tr>`;
+  }).join('');
+
+  // Step 6: mode toggle pills
+  const modePills = [['pct', 'Procent (%)'], ['count', 'Antal']].map(([val, label]) => {
+    const active = levelOverlapMode === val;
+    return `<button onclick="levelOverlapMode='${val}';renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${active ? '#4f46e5' : '#e5e7eb'};background:${active ? '#ede9fe' : 'white'};color:${active ? '#4f46e5' : '#6b7280'};font-weight:${active ? '600' : '400'}">${label}</button>`;
+  }).join('');
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Nivåöverlapp — vilka nivåer väljs tillsammans?</h3>
+        <span class="result-count">${levels.length} nivåer · Rad→kolumn: andel av rad-nivåns användare som även valde kolumn-nivån</span>
+      </div>
+      <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center">
+        <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">Cellvärde:</span>
+        ${modePills}
+      </div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th class="matrix-row-header" style="background:#f9fafb;z-index:3">Nivå (n=antal)</th>
+              ${colHeaders}
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
         </table>
       </div>
     </div>`;

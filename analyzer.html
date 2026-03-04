@@ -467,12 +467,12 @@
     <button class="tab active" id="tab-profiles" onclick="switchView('profiles', this)">Fullständiga profiler (rådata)</button>
     <button class="tab" id="tab-distribution" onclick="switchView('distribution', this)">Spridning</button>
     <button class="tab" id="tab-ranking" onclick="switchView('ranking', this)">Ranking</button>
-    <button class="tab" id="tab-pairwise" onclick="switchView('pairwise', this)">Kombinationer (tabell)</button>
-    <button class="tab" id="tab-matrix" onclick="switchView('matrix', this)">Kombinationer (matris)</button>
-    <button class="tab" id="tab-leveloverlap" onclick="switchView('leveloverlap', this)">Nivåöverlapp</button>
-    <button class="tab" id="tab-timeline" onclick="switchView('timeline', this)">Tidslinje</button>
     <button class="tab" id="tab-levelprofile" onclick="switchView('levelprofile', this)">Per nivå</button>
     <button class="tab" id="tab-subjectprofile" onclick="switchView('subjectprofile', this)">Per ämne</button>
+    <button class="tab" id="tab-pairwise" onclick="switchView('pairwise', this)">Nivå × Ämne (tabell)</button>
+    <button class="tab" id="tab-matrix" onclick="switchView('matrix', this)">Nivå × Ämne (matris)</button>
+    <button class="tab" id="tab-leveloverlap" onclick="switchView('leveloverlap', this)">Nivå × Nivå</button>
+    <button class="tab" id="tab-timeline" onclick="switchView('timeline', this)">Tidslinje</button>
   </div>
 
   <div id="table-container"></div>
@@ -1001,7 +1001,7 @@ function renderPairwise() {
   document.getElementById('table-container').innerHTML = `
     <div class="table-card">
       <div class="table-header-row">
-        <h3>Parvisa kombinationer (utbildningsnivå × ämne)</h3>
+        <h3>Nivå × Ämne — parvisa kombinationer</h3>
         <span class="result-count">${pairs.length} par visas · <em>Obs/Förv</em> visar hur ofta paret förekommer jämfört med om nivå och ämne vore oberoende</span>
       </div>
       <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -1592,7 +1592,7 @@ function renderMatrix() {
   document.getElementById('table-container').innerHTML = `
     <div class="table-card">
       <div class="table-header-row">
-        <h3>Matris: utbildningsnivå × ämne</h3>
+        <h3>Nivå × Ämne — matris</h3>
         <span class="result-count">${levels.length} nivåer · ${subjects.length} ämnen · färg visar Obs/Förv-kvot</span>
       </div>
       <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center">
@@ -1644,11 +1644,16 @@ function renderLevelOverlap() {
   // Step 1: per-level user counts + sum of levels.length (for avgLevels)
   const levelCount = {};
   const levelLevelsSum = {};
+  const exclusiveCount = {};
   users.forEach(u => {
     u.levels.forEach(l => {
       levelCount[l] = (levelCount[l] || 0) + 1;
       levelLevelsSum[l] = (levelLevelsSum[l] || 0) + u.levels.length;
     });
+    if (u.levels.length === 1) {
+      const l = u.levels[0];
+      exclusiveCount[l] = (exclusiveCount[l] || 0) + 1;
+    }
   });
 
   // Step 2: directional co-occurrence — coCount[L1][L2] = users with BOTH L1 and L2
@@ -1699,19 +1704,21 @@ function renderLevelOverlap() {
 
     const avg = avgLevels[rowLevel];
     const barW = Math.round(avg / maxAvgLevels * 100);
+    const exclPct = Math.round((exclusiveCount[rowLevel] || 0) / nRow * 100);
     return `
       <tr>
         <td class="matrix-row-header">
           <span class="tag tag-level">${escHtml(rowLabel)}</span>
           <span style="font-size:11px;color:#6b7280;margin-left:4px">(n=${nRow})</span>
         </td>
-        <td class="matrix-total-cell" title="Snitt antal nivåval per användare: ${avg.toFixed(1)}">
+        <td class="matrix-total-cell" title="Snitt ${avg.toFixed(1)} nivåval/user · ${exclPct}% valde enbart denna nivå">
           <div style="display:flex;align-items:center;gap:6px">
             <div style="width:60px;background:#e5e7eb;border-radius:2px;height:8px;flex-shrink:0">
               <div style="width:${barW}%;background:#7c3aed;height:8px;border-radius:2px"></div>
             </div>
             <span style="font-size:12px;font-weight:600;color:#7c3aed">${avg.toFixed(1)}</span>
           </div>
+          <span style="font-size:10px;color:#9ca3af">exakta val: ${exclPct}%</span>
         </td>
         ${cells}
       </tr>`;
@@ -1726,7 +1733,7 @@ function renderLevelOverlap() {
   document.getElementById('table-container').innerHTML = `
     <div class="table-card">
       <div class="table-header-row">
-        <h3>Nivåöverlapp — vilka nivåer väljs tillsammans?</h3>
+        <h3>Nivå × Nivå — överlapp</h3>
         <span class="result-count">${levels.length} nivåer · Rad→kolumn: andel av rad-nivåns användare som även valde kolumn-nivån</span>
       </div>
       <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center">

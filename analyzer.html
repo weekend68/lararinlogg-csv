@@ -1640,10 +1640,14 @@ function renderLevelOverlap() {
     return;
   }
 
-  // Step 1: per-level user counts (denominator for row percentages)
+  // Step 1: per-level user counts + sum of levels.length (for avgLevels)
   const levelCount = {};
+  const levelLevelsSum = {};
   users.forEach(u => {
-    u.levels.forEach(l => { levelCount[l] = (levelCount[l] || 0) + 1; });
+    u.levels.forEach(l => {
+      levelCount[l] = (levelCount[l] || 0) + 1;
+      levelLevelsSum[l] = (levelLevelsSum[l] || 0) + u.levels.length;
+    });
   });
 
   // Step 2: directional co-occurrence — coCount[L1][L2] = users with BOTH L1 and L2
@@ -1661,6 +1665,9 @@ function renderLevelOverlap() {
 
   // Step 3: levels in canonical order with at least 1 user
   const levels = LEVEL_ORDER.filter(l => levelCount[l] > 0);
+  const avgLevels = {};
+  levels.forEach(l => { avgLevels[l] = levelLevelsSum[l] / levelCount[l]; });
+  const maxAvgLevels = Math.max(...levels.map(l => avgLevels[l]), 0.001);
 
   // Step 4: column headers (truncated with tooltip)
   const colHeaders = levels.map(l => {
@@ -1694,6 +1701,12 @@ function renderLevelOverlap() {
         <td class="matrix-row-header">
           <span class="tag tag-level">${escHtml(rowLabel)}</span>
           <span style="font-size:11px;color:#6b7280;margin-left:4px">(n=${nRow})</span>
+          <div style="display:flex;align-items:center;gap:4px;margin-top:3px" title="Snitt antal nivåval per användare: ${avgLevels[rowLevel].toFixed(1)}">
+            <div style="width:60px;background:#e5e7eb;border-radius:2px;height:5px;flex-shrink:0">
+              <div style="width:${Math.round(avgLevels[rowLevel] / maxAvgLevels * 100)}%;background:#7c3aed;height:5px;border-radius:2px"></div>
+            </div>
+            <span style="font-size:10px;color:#9ca3af">${avgLevels[rowLevel].toFixed(1)} nivåval/user</span>
+          </div>
         </td>
         ${cells}
       </tr>`;

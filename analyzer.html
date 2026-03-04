@@ -1697,16 +1697,20 @@ function renderLevelOverlap() {
       return `<td class="matrix-cell" style="${style}" title="${escAttr(tip)}">${escHtml(String(display))}</td>`;
     }).join('');
 
+    const avg = avgLevels[rowLevel];
+    const barW = Math.round(avg / maxAvgLevels * 100);
     return `
       <tr>
         <td class="matrix-row-header">
           <span class="tag tag-level">${escHtml(rowLabel)}</span>
           <span style="font-size:11px;color:#6b7280;margin-left:4px">(n=${nRow})</span>
-          <div style="display:flex;align-items:center;gap:4px;margin-top:3px" title="Snitt antal nivåval per användare: ${avgLevels[rowLevel].toFixed(1)}">
-            <div style="width:60px;background:#e5e7eb;border-radius:2px;height:5px;flex-shrink:0">
-              <div style="width:${Math.round(avgLevels[rowLevel] / maxAvgLevels * 100)}%;background:#7c3aed;height:5px;border-radius:2px"></div>
+        </td>
+        <td class="matrix-total-cell" title="Snitt antal nivåval per användare: ${avg.toFixed(1)}">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:60px;background:#e5e7eb;border-radius:2px;height:8px;flex-shrink:0">
+              <div style="width:${barW}%;background:#7c3aed;height:8px;border-radius:2px"></div>
             </div>
-            <span style="font-size:10px;color:#9ca3af">${avgLevels[rowLevel].toFixed(1)} nivåval/user</span>
+            <span style="font-size:12px;font-weight:600;color:#7c3aed">${avg.toFixed(1)}</span>
           </div>
         </td>
         ${cells}
@@ -1734,6 +1738,7 @@ function renderLevelOverlap() {
           <thead>
             <tr>
               <th class="matrix-row-header" style="background:#f9fafb;z-index:3">Nivå (n=antal)</th>
+              <th class="matrix-total-cell" style="background:#f9fafb;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;vertical-align:bottom;padding:6px 8px">Snitt<br>nivåval</th>
               ${colHeaders}
             </tr>
           </thead>

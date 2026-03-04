@@ -471,7 +471,7 @@
     <button class="tab" id="tab-subjectprofile" onclick="switchView('subjectprofile', this)">Per ämne</button>
     <button class="tab" id="tab-pairwise" onclick="switchView('pairwise', this)">Nivå × Ämne (tabell)</button>
     <button class="tab" id="tab-matrix" onclick="switchView('matrix', this)">Nivå × Ämne (matris)</button>
-    <button class="tab" id="tab-leveloverlap" onclick="switchView('leveloverlap', this)">Nivå × Nivå</button>
+    <button class="tab" id="tab-leveloverlap" onclick="switchView('leveloverlap', this)">Nivå × Nivå (matris)</button>
     <button class="tab" id="tab-timeline" onclick="switchView('timeline', this)">Tidslinje</button>
   </div>
 
@@ -1369,11 +1369,12 @@ function renderLevelProfile() {
     <div class="table-card">
       <div class="table-header-row">
         <h3>Profil per utbildningsnivå</h3>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="result-count">${levelProfileExact ? 'Exakta val: användare med exakt en nivå' : 'Alla användare per nivå'} · Klicka rubrik för att sortera · ${totalN.toLocaleString('sv')} användare</span>
-          <button onclick="levelProfileExact=false;renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${!levelProfileExact ? '#4f46e5' : '#e5e7eb'};background:${!levelProfileExact ? '#ede9fe' : 'white'};color:${!levelProfileExact ? '#4f46e5' : '#6b7280'};font-weight:${!levelProfileExact ? '600' : '400'}">Visa alla</button>
-          <button onclick="levelProfileExact=true;renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${levelProfileExact ? '#4f46e5' : '#e5e7eb'};background:${levelProfileExact ? '#ede9fe' : 'white'};color:${levelProfileExact ? '#4f46e5' : '#6b7280'};font-weight:${levelProfileExact ? '600' : '400'}">Exakta val</button>
-        </div>
+        <span class="result-count">${totalN.toLocaleString('sv')} användare · Klicka rubrik för att sortera</span>
+      </div>
+      <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center">
+        <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">Visa:</span>
+        <button onclick="levelProfileExact=false;renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${!levelProfileExact ? '#4f46e5' : '#e5e7eb'};background:${!levelProfileExact ? '#ede9fe' : 'white'};color:${!levelProfileExact ? '#4f46e5' : '#6b7280'};font-weight:${!levelProfileExact ? '600' : '400'}">Visa alla</button>
+        <button onclick="levelProfileExact=true;renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${levelProfileExact ? '#4f46e5' : '#e5e7eb'};background:${levelProfileExact ? '#ede9fe' : 'white'};color:${levelProfileExact ? '#4f46e5' : '#6b7280'};font-weight:${levelProfileExact ? '600' : '400'}">Exakta val</button>
       </div>
       <table>
         <thead>
@@ -1733,7 +1734,7 @@ function renderLevelOverlap() {
   document.getElementById('table-container').innerHTML = `
     <div class="table-card">
       <div class="table-header-row">
-        <h3>Nivå × Nivå — överlapp</h3>
+        <h3>Nivå × Nivå (matris) — överlapp</h3>
         <span class="result-count">${levels.length} nivåer · Rad→kolumn: andel av rad-nivåns användare som även valde kolumn-nivån</span>
       </div>
       <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center">

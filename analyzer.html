@@ -473,6 +473,7 @@
     <button class="tab" id="tab-matrix" onclick="switchView('matrix', this)">Nivå × Ämne (matris)</button>
     <button class="tab" id="tab-leveloverlap" onclick="switchView('leveloverlap', this)">Nivå × Nivå (matris)</button>
     <button class="tab" id="tab-timeline" onclick="switchView('timeline', this)">Tidslinje</button>
+    <button class="tab" id="tab-valovtid" onclick="switchView('valovtid', this)">Val över tid</button>
   </div>
 
   <div id="table-container"></div>
@@ -528,6 +529,7 @@ let subjectProfileSort = { col: 'n', dir: -1 };
 let matrixMode = 'count';
 let levelOverlapMode = 'pct';   // 'pct' | 'count'
 let levelProfileExact = false;  // false = "Visa alla", true = "Exakta val"
+let valOverTidGranularity = 'day'; // 'day' | 'week'
 // ===== CSV PARSING =====
 
 function parseCSVLine(line) {
@@ -816,6 +818,7 @@ function renderCurrentView() {
   else if (currentView === 'subjectprofile') renderSubjectProfile();
   else if (currentView === 'matrix')         renderMatrix();
   else if (currentView === 'leveloverlap')   renderLevelOverlap();
+  else if (currentView === 'valovtid')       renderValOverTid();
 }
 
 // ===== RARITY =====
@@ -1260,6 +1263,160 @@ function renderTimeline() {
       </div>
       <div class="chart-outer">
         <div class="chart-inner">${bars}</div>
+      </div>
+    </div>`;
+}
+
+// ===== VAL ÖVER TID VIEW =====
+
+function renderValOverTid() {
+  const users   = filteredUsers;
+  const fromVal = document.getElementById('filter-from').value;
+  const toVal   = document.getElementById('filter-to').value;
+
+  if (!fromVal || !toVal || users.length === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Ange ett datumintervall för att visa val över tid.</div></div>';
+    return;
+  }
+
+  const fromDate = new Date(fromVal + 'T00:00:00');
+  const toDate   = new Date(toVal   + 'T23:59:59');
+  const byWeek   = valOverTidGranularity === 'week';
+
+  function mondayOf(d) {
+    const date = new Date(d);
+    const dow  = (date.getDay() + 6) % 7; // måndag=0
+    date.setDate(date.getDate() - dow);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  function slotKey(d) {
+    if (byWeek) {
+      const m  = mondayOf(d);
+      const y  = m.getFullYear();
+      const mo = String(m.getMonth() + 1).padStart(2, '0');
+      const da = String(m.getDate()).padStart(2, '0');
+      return `${y}-${mo}-${da}`;
+    }
+    const y  = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${da}`;
+  }
+
+  // Build ordered slots covering the full range
+  const slotOrder = [];
+  const slotSet   = new Set();
+  const cursor    = byWeek ? mondayOf(fromDate) : new Date(fromDate);
+  cursor.setHours(0, 0, 0, 0);
+  while (cursor <= toDate) {
+    const k = slotKey(cursor);
+    if (!slotSet.has(k)) { slotOrder.push(k); slotSet.add(k); }
+    byWeek ? cursor.setDate(cursor.getDate() + 7) : cursor.setDate(cursor.getDate() + 1);
+  }
+
+  // Per slot: samla levels.length och subjects.length
+  const slotData = {};
+  slotOrder.forEach(k => { slotData[k] = { lvl: [], sub: [] }; });
+  users.forEach(u => {
+    if (!u.createdAt) return;
+    const k = slotKey(u.createdAt);
+    if (!slotData[k]) return;
+    slotData[k].lvl.push(u.levels.length);
+    slotData[k].sub.push(u.subjects.length);
+  });
+
+  // Beräkna snitt — utelämna tomma slots
+  const entries = slotOrder
+    .filter(k => slotData[k].lvl.length > 0)
+    .map(k => {
+      const { lvl, sub } = slotData[k];
+      const n    = lvl.length;
+      const avgL = lvl.reduce((s, v) => s + v, 0) / n;
+      const avgS = sub.reduce((s, v) => s + v, 0) / n;
+      return { key: k, n, avgL, avgS };
+    });
+
+  if (entries.length === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga registreringar i valt datumintervall.</div></div>';
+    return;
+  }
+
+  const maxL = Math.max(...entries.map(e => e.avgL), 0.01);
+  const maxS = Math.max(...entries.map(e => e.avgS), 0.01);
+  const barW = Math.max(14, Math.min(40, Math.floor(960 / entries.length)));
+
+  function slotLabel(key) {
+    const d = new Date(key + 'T12:00:00');
+    if (byWeek) {
+      return 'V' + String(getISOWeek(d)).padStart(2, '0');
+    }
+    return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+  }
+
+  function getISOWeek(d) {
+    const date = new Date(d);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    const week1 = new Date(date.getFullYear(), 0, 4);
+    return 1 + Math.round(((date - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  }
+
+  function buildBars(entries, valueKey, maxVal, color) {
+    return entries.map(e => {
+      const avg   = e[valueKey];
+      const barH  = Math.max(4, Math.round(avg / maxVal * 180));
+      const label = slotLabel(e.key);
+      const tip   = `${label}: snitt ${avg.toFixed(1)} (${e.n} registreringar)`;
+      return `
+        <div class="chart-col" style="width:${barW}px" title="${escAttr(tip)}">
+          <div class="chart-col-body">
+            <span class="chart-count">${avg.toFixed(1)}</span>
+            <div class="chart-bar chart-bar-filled" style="height:${barH}px;width:${barW - 3}px;background:${color}"></div>
+          </div>
+          <span class="chart-label">${escHtml(label)}</span>
+        </div>`;
+    }).join('');
+  }
+
+  const barsL = buildBars(entries, 'avgL', maxL, '#4f46e5');
+  const barsS = buildBars(entries, 'avgS', maxS, '#0369a1');
+
+  const granPills = [['day','Dag'],['week','Vecka']].map(([val, lbl]) => {
+    const active = valOverTidGranularity === val;
+    return `<button onclick="valOverTidGranularity='${val}';renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${active ? '#4f46e5' : '#e5e7eb'};background:${active ? '#ede9fe' : 'white'};color:${active ? '#4f46e5' : '#6b7280'};font-weight:${active ? '600' : '400'}">${lbl}</button>`;
+  }).join('');
+
+  const total = entries.reduce((s, e) => s + e.n, 0);
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Val per nyregistrering över tid</h3>
+        <span class="result-count">${total.toLocaleString('sv')} registreringar · ${entries.length} perioder</span>
+      </div>
+      <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center">
+        <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">Visa per:</span>
+        ${granPills}
+      </div>
+      <div style="padding:16px 20px 4px">
+        <div style="font-size:12px;font-weight:600;color:#4f46e5;margin-bottom:4px">
+          <span style="display:inline-block;width:10px;height:10px;background:#4f46e5;border-radius:2px;margin-right:5px"></span>Snitt nivåval/registrering
+        </div>
+        <div class="chart-outer">
+          <div class="chart-inner">${barsL}</div>
+        </div>
+      </div>
+      <div style="padding:8px 20px 16px">
+        <div style="font-size:12px;font-weight:600;color:#0369a1;margin-bottom:4px">
+          <span style="display:inline-block;width:10px;height:10px;background:#0369a1;border-radius:2px;margin-right:5px"></span>Snitt ämnesval/registrering
+        </div>
+        <div class="chart-outer">
+          <div class="chart-inner">${barsS}</div>
+        </div>
       </div>
     </div>`;
 }

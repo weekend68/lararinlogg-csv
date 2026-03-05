@@ -185,6 +185,18 @@
     .dropdown-item:hover { background: #f5f3ff; }
     .dropdown-item input[type="checkbox"] { cursor: pointer; accent-color: #4f46e5; flex-shrink: 0; }
 
+    /* Tab info box */
+    #tab-info {
+      background: #f8f7ff;
+      border-left: 3px solid #4f46e5;
+      border-radius: 0 6px 6px 0;
+      padding: 10px 14px;
+      margin: 12px 0 4px;
+      font-size: 13px;
+      color: #4b5563;
+      line-height: 1.5;
+    }
+
     /* Reset button */
     .btn-reset {
       padding: 0 14px;
@@ -387,7 +399,8 @@
     <p>Ladda upp <strong>users-export.csv</strong> för att utforska kombinationer av utbildningsnivåer och ämnen, och identifiera ovanliga registreringar.</p>
     <label class="upload-label" for="file-input">Välj CSV-fil</label>
     <input type="file" id="file-input" accept=".csv" onchange="handleFile(this)">
-    <p style="margin-top:20px;margin-bottom:0;font-size:12px;color:#d1d5db">Senast uppdaterad 2026-03-05 15:21</p>
+    <p style="margin-top:20px;margin-bottom:4px;font-size:12px;color:#d1d5db">Vibe-codad med Claude av Johan Möller i syfte att utforska informationen av de inloggade användarna.</p>
+    <p style="margin-top:0;margin-bottom:0;font-size:12px;color:#d1d5db">Verktygsversion 2026-03-05 15:21</p>
   </div>
 </div>
 
@@ -477,6 +490,7 @@
     <button class="tab" id="tab-valovtid" onclick="switchView('valovtid', this)">Val över tid</button>
   </div>
 
+  <div id="tab-info"></div>
   <div id="table-container"></div>
 
 </div>
@@ -739,6 +753,7 @@ function applyFilters() {
   });
 
   updateStats();
+  document.getElementById('tab-info').textContent = TAB_INFO[currentView] || '';
   renderCurrentView();
 }
 
@@ -805,10 +820,24 @@ function updateStats() {
 
 // ===== VIEW =====
 
+const TAB_INFO = {
+  profiles:       'Visar unika kombinationer av nivåval och ämnesval, grupperade efter hur många lärare som har exakt samma profil. Färgkodningen visar hur ovanlig kombinationen är: röd = bara en person, gul = 2–4 personer, grön = 5 eller fler.',
+  pairwise:       'Varje rad är ett par av en utbildningsnivå och ett ämne. Kolumnerna Obs och Förv visar hur många som faktiskt valt kombinationen jämfört med vad som statistiskt vore förväntat om valen vore oberoende. Filtrera på Bedömning för att hitta ovanligt starka eller svaga samband.',
+  matrix:         'Heatmap över alla nivå×ämne-kombinationer. Ju mörkare färg, desto fler (eller högre kvot) än förväntat. Växla mellan Antal, Obs och Förv med knapparna uppe till höger.',
+  distribution:   'Histogram som visar hur många nivåer respektive ämnen varje lärare har valt. Används för att förstå om lärare tenderar att ha breda eller smala profiler.',
+  ranking:        'Rankar de vanligaste nivåerna och ämnena med horisontella staplar. Raden "(Inget val)" visar hur många lärare som inte gjort något val alls inom kategorin.',
+  timeline:       'Visar hur nyregistreringar fördelar sig över tid — per dag eller per timme på dygnet. Bra för att se när kampanjer eller utskick slagit igenom.',
+  valovtid:       'Visar snittantalet nivåval och ämnesval per nyregistrering över tid. Bra för att se om lärare som registrerat sig vid olika tillfällen fyllt i sin profil mer eller mindre fullständigt.',
+  levelprofile:   'En rad per utbildningsnivå med kolumner för de vanligaste ämnena. Minibars gör det enkelt att jämföra relativa andelar. Klicka på en kolumnrubrik för att sortera.',
+  subjectprofile: 'Samma tabell som Per nivå, men spegelvänd — en rad per ämne med kolumner för nivåerna. Klicka på en kolumnrubrik för att sortera.',
+  leveloverlap:   'Matris som visar överlapp mellan nivåer. Varje cell visar andelen av rad-nivåns lärare som också valt kolumn-nivån. Används för att se vilka nivåkombinationer som är vanligast att undervisa i.',
+};
+
 function switchView(view, btn) {
   currentView = view;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
+  document.getElementById('tab-info').textContent = TAB_INFO[view] || '';
   renderCurrentView();
 }
 

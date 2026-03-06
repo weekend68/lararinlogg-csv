@@ -1052,12 +1052,12 @@ function renderDashboard() {
       <div class="dash-mid-row">
         <div class="dash-panel">
           <div class="dash-panel-label">Topp 5 utbildningsnivåer</div>
-          <div style="font-size:40px;font-weight:700;color:#f1f5f9;letter-spacing:-1px;margin-bottom:14px">${avgLevels} <span style="font-size:15px;font-weight:400;color:#64748b">snitt per lärare</span></div>
+          <div style="font-size:40px;font-weight:700;color:#f1f5f9;letter-spacing:-1px;margin-bottom:14px">${avgLevels} <span style="font-size:15px;font-weight:400;color:#64748b">snitt nivåer per användare</span></div>
           ${barRows(topLevels, maxLevel)}
         </div>
         <div class="dash-panel">
           <div class="dash-panel-label">Topp 5 ämnen</div>
-          <div style="font-size:40px;font-weight:700;color:#f1f5f9;letter-spacing:-1px;margin-bottom:14px">${avgSubjects} <span style="font-size:15px;font-weight:400;color:#64748b">snitt per lärare</span></div>
+          <div style="font-size:40px;font-weight:700;color:#f1f5f9;letter-spacing:-1px;margin-bottom:14px">${avgSubjects} <span style="font-size:15px;font-weight:400;color:#64748b">snitt ämnen per användare</span></div>
           ${barRows(topSubjects, maxSubject)}
         </div>
       </div>

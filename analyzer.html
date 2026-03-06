@@ -382,6 +382,115 @@
       .filters-row { flex-direction: column; align-items: stretch; }
       .dropdown-trigger { min-width: 100%; }
     }
+
+    /* ===== LIVE DASHBOARD ===== */
+    .dash-wrap {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+    .dash-top-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    .dash-mid-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .dash-panel {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 22px 26px;
+      border: 1px solid #334155;
+    }
+    .dash-panel-label {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .dash-big-number {
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1;
+      color: #f1f5f9;
+      letter-spacing: -1px;
+    }
+    .dash-big-number.accent { color: #818cf8; }
+    .dash-clock-time {
+      font-size: 52px;
+      font-weight: 700;
+      line-height: 1;
+      color: #f1f5f9;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -1px;
+    }
+    .dash-clock-date {
+      font-size: 15px;
+      color: #94a3b8;
+      margin-top: 6px;
+    }
+    .dash-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .dash-bar-label {
+      font-size: 13px;
+      color: #cbd5e1;
+      width: 180px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dash-bar-track {
+      flex: 1;
+      background: #0f172a;
+      border-radius: 3px;
+      height: 10px;
+      overflow: hidden;
+    }
+    .dash-bar-fill {
+      height: 100%;
+      background: #6366f1;
+      border-radius: 3px;
+    }
+    .dash-bar-count {
+      font-size: 13px;
+      color: #94a3b8;
+      width: 40px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .dash-timeline {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 80px;
+    }
+    .dash-tl-bar {
+      flex: 1;
+      background: #4f46e5;
+      border-radius: 2px 2px 0 0;
+      min-height: 2px;
+      opacity: 0.8;
+    }
+    .dash-bottom-row {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 22px 26px;
+      border: 1px solid #334155;
+    }
   </style>
 </head>
 <body>
@@ -488,6 +597,7 @@
     <button class="tab" id="tab-leveloverlap" onclick="switchView('leveloverlap', this)">Nivå × Nivå (matris)</button>
     <button class="tab" id="tab-timeline" onclick="switchView('timeline', this)">Tidslinje</button>
     <button class="tab" id="tab-valovtid" onclick="switchView('valovtid', this)">Val över tid</button>
+    <button class="tab" id="tab-dashboard" onclick="switchView('dashboard', this)">Live Dashboard</button>
   </div>
 
   <div id="tab-info"></div>
@@ -831,9 +941,13 @@ const TAB_INFO = {
   levelprofile:   'En rad per utbildningsnivå med kolumner för de vanligaste ämnena. Minibars gör det enkelt att jämföra relativa andelar. Klicka på en kolumnrubrik för att sortera.',
   subjectprofile: 'Samma tabell som Per nivå, men spegelvänd — en rad per ämne med kolumner för nivåerna. Klicka på en kolumnrubrik för att sortera.',
   leveloverlap:   'Matris som visar överlapp mellan nivåer. Varje cell visar andelen av rad-nivåns lärare som också valt kolumn-nivån. Används för att se vilka nivåkombinationer som är vanligast att undervisa i.',
+  dashboard:      'Kontorsdisplay med nyckeltal i realtid. Layouten efterliknar ett Grafana-dashboard och är tänkt som underlag för att speca upp vad som ska byggas med Prometheus/Grafana.',
 };
 
+let dashboardClockInterval = null;
+
 function switchView(view, btn) {
+  if (dashboardClockInterval) { clearInterval(dashboardClockInterval); dashboardClockInterval = null; }
   currentView = view;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -852,6 +966,105 @@ function renderCurrentView() {
   else if (currentView === 'matrix')         renderMatrix();
   else if (currentView === 'leveloverlap')   renderLevelOverlap();
   else if (currentView === 'valovtid')       renderValOverTid();
+  else if (currentView === 'dashboard')      renderDashboard();
+}
+
+// ===== DASHBOARD =====
+
+function dashClockTick() {
+  const el = document.getElementById('dash-clock-time');
+  const el2 = document.getElementById('dash-clock-date');
+  if (!el) return;
+  const now = new Date();
+  el.textContent = now.toLocaleTimeString('sv-SE');
+  el2.textContent = now.toLocaleDateString('sv-SE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function renderDashboard() {
+  const users = filteredUsers;
+  const total = users.length;
+  if (total === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga användare matchar de valda filtren.</div></div>';
+    return;
+  }
+
+  const complete = users.filter(u => u.complete).length;
+  const completePct = Math.round(complete / total * 100);
+
+  // Frekvens nivåer & ämnen
+  const levelFreq = {}, subjectFreq = {};
+  users.forEach(u => {
+    u.levels.forEach(l   => { levelFreq[l]   = (levelFreq[l]   || 0) + 1; });
+    u.subjects.forEach(s => { subjectFreq[s] = (subjectFreq[s] || 0) + 1; });
+  });
+  const topLevels   = Object.entries(levelFreq).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const topSubjects = Object.entries(subjectFreq).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const maxLevel    = topLevels[0]?.[1]   || 1;
+  const maxSubject  = topSubjects[0]?.[1] || 1;
+
+  // Tidslinje — alla dagar från första till sista registrering (allUsers, ej filtrerat)
+  const datedUsers = allUsers.filter(u => u.createdAt).sort((a, b) => a.createdAt - b.createdAt);
+  let timelineHTML = '';
+  if (datedUsers.length > 0) {
+    const first = new Date(datedUsers[0].createdAt); first.setHours(0,0,0,0);
+    const last  = new Date(datedUsers[datedUsers.length - 1].createdAt); last.setHours(23,59,59,999);
+    const slots = {};
+    for (let d = new Date(first); d <= last; d.setDate(d.getDate() + 1)) {
+      slots[d.toISOString().slice(0, 10)] = 0;
+    }
+    datedUsers.forEach(u => { const k = u.createdAt.toISOString().slice(0, 10); if (k in slots) slots[k]++; });
+    const counts = Object.values(slots);
+    const maxCount = Math.max(...counts, 1);
+    timelineHTML = counts.map(c =>
+      `<div class="dash-tl-bar" style="height:${Math.max(2, Math.round(c / maxCount * 76))}px" title="${c}"></div>`
+    ).join('');
+  }
+
+  function barRows(entries, max) {
+    return entries.map(([label, count]) => `
+      <div class="dash-bar-row">
+        <div class="dash-bar-label">${escHtml(label)}</div>
+        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${Math.round(count/max*100)}%"></div></div>
+        <div class="dash-bar-count">${count}</div>
+      </div>`).join('');
+  }
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="dash-wrap">
+      <div class="dash-top-row">
+        <div class="dash-panel">
+          <div class="dash-panel-label">Totalt registrerade</div>
+          <div class="dash-big-number">${total.toLocaleString('sv')}</div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-label">Fullständiga profiler</div>
+          <div class="dash-big-number accent">${completePct} %</div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-label">Lokal tid</div>
+          <div class="dash-clock-time" id="dash-clock-time"></div>
+          <div class="dash-clock-date" id="dash-clock-date"></div>
+        </div>
+      </div>
+      <div class="dash-mid-row">
+        <div class="dash-panel">
+          <div class="dash-panel-label">Topp 5 utbildningsnivåer</div>
+          ${barRows(topLevels, maxLevel)}
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-label">Topp 5 ämnen</div>
+          ${barRows(topSubjects, maxSubject)}
+        </div>
+      </div>
+      <div class="dash-bottom-row">
+        <div class="dash-panel-label">Registreringar över tid (alla ${datedUsers.length.toLocaleString('sv')} med datum)</div>
+        <div class="dash-timeline">${timelineHTML}</div>
+      </div>
+    </div>`;
+
+  dashClockTick();
+  dashboardClockInterval = setInterval(dashClockTick, 1000);
 }
 
 // ===== RARITY =====

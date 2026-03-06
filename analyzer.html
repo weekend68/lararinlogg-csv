@@ -1002,6 +1002,8 @@ function renderDashboard() {
   const topSubjects = Object.entries(subjectFreq).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const maxLevel    = topLevels[0]?.[1]   || 1;
   const maxSubject  = topSubjects[0]?.[1] || 1;
+  const avgLevels   = (users.reduce((s, u) => s + u.levels.length,   0) / total).toFixed(1);
+  const avgSubjects = (users.reduce((s, u) => s + u.subjects.length, 0) / total).toFixed(1);
 
   // Tidslinje — alla dagar från första till sista registrering (allUsers, ej filtrerat)
   const datedUsers = allUsers.filter(u => u.createdAt).sort((a, b) => a.createdAt - b.createdAt);
@@ -1050,10 +1052,12 @@ function renderDashboard() {
       <div class="dash-mid-row">
         <div class="dash-panel">
           <div class="dash-panel-label">Topp 5 utbildningsnivåer</div>
+          <div style="font-size:40px;font-weight:700;color:#f1f5f9;letter-spacing:-1px;margin-bottom:14px">${avgLevels} <span style="font-size:15px;font-weight:400;color:#64748b">snitt per lärare</span></div>
           ${barRows(topLevels, maxLevel)}
         </div>
         <div class="dash-panel">
           <div class="dash-panel-label">Topp 5 ämnen</div>
+          <div style="font-size:40px;font-weight:700;color:#f1f5f9;letter-spacing:-1px;margin-bottom:14px">${avgSubjects} <span style="font-size:15px;font-weight:400;color:#64748b">snitt per lärare</span></div>
           ${barRows(topSubjects, maxSubject)}
         </div>
       </div>

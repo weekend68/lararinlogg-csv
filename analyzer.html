@@ -64,9 +64,9 @@
     /* Stats */
     .stats-bar {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 14px;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
     .stat-card {
       background: white;
@@ -76,6 +76,53 @@
     }
     .stat-value { font-size: 26px; font-weight: 700; color: #4f46e5; display: block; }
     .stat-label { font-size: 12px; color: #6b7280; margin-top: 3px; display: block; }
+    .stat-sub   { font-size: 12px; color: #9ca3af; margin-top: 2px; display: block; }
+
+    .role-dist-card {
+      background: white;
+      border-radius: 10px;
+      padding: 12px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .role-dist-title {
+      font-size: 11px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
+    }
+    .role-dist-items { display: flex; flex: 1; }
+    .role-dist-item {
+      display: flex; flex-direction: column; align-items: center; flex: 1;
+      padding: 4px 10px; border-left: 1px solid #f3f4f6;
+    }
+    .info-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 13px; height: 13px; border-radius: 50%;
+      background: #d1d5db; color: #6b7280;
+      font-size: 9px; font-weight: 700; font-style: normal;
+      cursor: default; position: relative; margin-left: 3px; vertical-align: middle;
+    }
+    .info-icon:hover::after {
+      content: attr(data-tip);
+      position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      background: #1f2937; color: #f9fafb;
+      font-size: 11px; font-weight: 400; font-style: normal;
+      padding: 6px 10px; border-radius: 6px;
+      white-space: normal; width: 220px; line-height: 1.5;
+      pointer-events: none; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .info-icon:hover::before {
+      content: '';
+      position: absolute; bottom: calc(100% + 1px); left: 50%; transform: translateX(-50%);
+      border: 5px solid transparent; border-top-color: #1f2937;
+      pointer-events: none; z-index: 100;
+    }
+    .role-dist-item:first-child { border-left: none; }
+    .role-dist-value { font-size: 18px; font-weight: 700; color: #4f46e5; line-height: 1.2; }
+    .role-dist-name  { font-size: 11px; color: #6b7280; margin-top: 2px; white-space: nowrap; }
 
     /* Incomplete notice */
     .notice {
@@ -321,6 +368,7 @@
     .dist-bar { height: 16px; border-radius: 3px; min-width: 2px; }
     .dist-bar-level   { background: #7c3aed; }
     .dist-bar-subject { background: #0369a1; }
+    .traffbild-bar    { background: #f59e0b; }
     .dist-count { width: 90px; font-size: 12px; color: #6b7280; flex-shrink: 0; }
 
     /* Matrix view */
@@ -509,7 +557,7 @@
     <label class="upload-label" for="file-input">Välj CSV-fil</label>
     <input type="file" id="file-input" accept=".csv" onchange="handleFile(this)">
     <p style="margin-top:20px;margin-bottom:4px;font-size:12px;color:#d1d5db">Vibe-codad med Claude av Johan Möller i syfte att utforska informationen av de inloggade användarna.</p>
-    <p style="margin-top:0;margin-bottom:0;font-size:12px;color:#111827">Verktygsversion 2026-03-12 08:23</p>
+    <p style="margin-top:0;margin-bottom:0;font-size:12px;color:#111827">Verktygsversion 2026-03-18 15:00</p>
   </div>
 </div>
 
@@ -522,16 +570,43 @@
       <span class="stat-label">Totalt med roll</span>
     </div>
     <div class="stat-card">
-      <span class="stat-value" id="stat-filtered">0</span>
-      <span class="stat-label">Visas (efter filter)</span>
-    </div>
-    <div class="stat-card">
       <span class="stat-value" id="stat-combos">0</span>
       <span class="stat-label">Unika kombinationer</span>
+      <span class="stat-sub" id="stat-combos-pct"></span>
     </div>
     <div class="stat-card">
       <span class="stat-value" id="stat-latest">–</span>
       <span class="stat-label">Senaste registrering</span>
+    </div>
+  </div>
+
+  <div class="role-dist-card">
+    <span class="role-dist-title">Rollfördelning</span>
+    <div class="role-dist-items">
+      <div class="role-dist-item">
+        <span class="role-dist-value" id="rdist-all">0</span>
+        <span class="role-dist-name">Samtliga konton</span>
+      </div>
+      <div class="role-dist-item">
+        <span class="role-dist-value" id="rdist-norole">0</span>
+        <span class="role-dist-name">Utan roll (ej kompletta)<i class="info-icon" data-tip="Dessa användare har ännu inte bekräftat sin e-postadress eller slutfört sin registrering, varför ingen roll har tilldelats.">i</i></span>
+      </div>
+      <div class="role-dist-item">
+        <span class="role-dist-value" id="rdist-withrole">0</span>
+        <span class="role-dist-name">Konton med roll</span>
+      </div>
+      <div class="role-dist-item">
+        <span class="role-dist-value" id="rdist-teacher">0</span>
+        <span class="role-dist-name">varav Lärare</span>
+      </div>
+      <div class="role-dist-item">
+        <span class="role-dist-value" id="rdist-student">0</span>
+        <span class="role-dist-name">varav Elever</span>
+      </div>
+      <div class="role-dist-item">
+        <span class="role-dist-value" id="rdist-other">0</span>
+        <span class="role-dist-name">varav Övriga</span>
+      </div>
     </div>
   </div>
 
@@ -568,16 +643,19 @@
       <div class="filter-group">
         <span class="filter-label">Roll</span>
         <select id="filter-role" onchange="applyFilters()">
-          <option value="__nonempty__">Med roll</option>
           <option value="">Alla (inkl. utan roll)</option>
+          <option value="__nonempty__">Med roll</option>
           <option value="teacher">Lärare</option>
           <option value="student">Elev</option>
           <option value="other">Övrig</option>
           <option value="__empty__">Utan roll</option>
         </select>
       </div>
-      <div class="filter-group" style="justify-content:flex-end">
-        <span class="filter-label">&nbsp;</span>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:20px">
+        <div style="text-align:right">
+          <span class="filter-label">Visar</span>
+          <div style="font-size:22px;font-weight:700;color:#4f46e5;line-height:1.3" id="stat-filtered">0</div>
+        </div>
         <button class="btn-reset" onclick="resetFilters()">Återställ</button>
       </div>
     </div>
@@ -591,6 +669,7 @@
     <button class="tab active" id="tab-profiles" onclick="switchView('profiles', this)">Fullständiga profiler (rådata)</button>
     <button class="tab" id="tab-distribution" onclick="switchView('distribution', this)">Spridning</button>
     <button class="tab" id="tab-ranking" onclick="switchView('ranking', this)">Ranking</button>
+    <button class="tab" id="tab-traffbild" onclick="switchView('traffbild', this)">Träffbild i målgrupp</button>
     <button class="tab" id="tab-levelprofile" onclick="switchView('levelprofile', this)">Per nivå</button>
     <button class="tab" id="tab-subjectprofile" onclick="switchView('subjectprofile', this)">Per ämne</button>
     <button class="tab" id="tab-pairwise" onclick="switchView('pairwise', this)">Nivå × Ämne (tabell)</button>
@@ -632,6 +711,33 @@ const LEVEL_LABELS = {
 };
 
 const LEVEL_ORDER = Object.keys(LEVEL_LABELS);
+
+const PDF = 'https://www.skolverket.se/download/18.dc84e68193ded1bd4915bb7/1737469521050/pdf13190.pdf';
+const LEVEL_POPULATION = {
+  preschool:    { low: 43000, high: 99000,
+                  lowNote: 'behöriga förskollärare (FTE)',
+                  highNote: 'all pedagogisk personal (FTE)',
+                  url: PDF + '#page=19',
+                  sourceLabel: 'Lärarprognos 2024, s. 19–20' },
+  'primary0-3': { low: 30100, high: null,
+                  lowNote: 'F-klass 6 600 + åk 1–3 23 500 (FTE)',
+                  url: PDF + '#page=24',
+                  sourceLabel: 'Lärarprognos 2024, s. 24' },
+  'primary4-6': { low: 28100, high: null,
+                  url: PDF + '#page=25',
+                  sourceLabel: 'Lärarprognos 2024, s. 25' },
+  'primary7-9': { low: 30000, high: null,
+                  lowNote: '"drygt 30 000" (FTE)',
+                  url: PDF + '#page=26',
+                  sourceLabel: 'Lärarprognos 2024, s. 26' },
+  secondary:    { low: 29900, high: null,
+                  url: 'https://www.skolverket.se/statistik-och-utvarderingar/statistik-om-forskola-och-skola/fler-statistiknyheter/statistik/2025-04-03-pedagogisk-personal-i-skola-och-vuxenutbildning-lasaret-2024-25',
+                  sourceLabel: 'Skolverket, Pedagogisk personal 2024/25' },
+  sfi:          { low: 2400, high: null,
+                  lowNote: '"drygt 2 400" (FTE)',
+                  url: PDF + '#page=33',
+                  sourceLabel: 'Lärarprognos 2024, s. 33' },
+};
 
 function labelLevel(key) {
   return LEVEL_LABELS[key] || key;
@@ -898,16 +1004,34 @@ function resetFilters() {
 // ===== STATS =====
 
 function updateStats() {
-  const complete   = filteredUsers.filter(u => u.complete);
+  const complete   = allUsers.filter(u => u.complete);
   const incomplete = filteredUsers.filter(u => !u.complete);
 
   document.getElementById('stat-total').textContent    = allUsers.filter(u => u.role).length.toLocaleString('sv');
   document.getElementById('stat-filtered').textContent = filteredUsers.length.toLocaleString('sv');
 
-  const keys = new Set(complete.map(u => u.levels.join('|') + '::' + u.subjects.join('|')));
-  document.getElementById('stat-combos').textContent = keys.size.toLocaleString('sv');
+  // Unique combinations + % of complete users with a fully unique combo
+  const groups = {};
+  complete.forEach(u => {
+    const k = u.levels.join('|') + '::' + u.subjects.join('|');
+    groups[k] = (groups[k] || 0) + 1;
+  });
+  const uniqueCount = Object.keys(groups).length;
+  const singletonUsers = Object.values(groups).filter(c => c === 1).length;
+  const pctUnique = complete.length > 0 ? (singletonUsers / complete.length * 100) : 0;
+  document.getElementById('stat-combos').textContent = uniqueCount.toLocaleString('sv');
+  document.getElementById('stat-combos-pct').textContent =
+    complete.length > 0 ? `${pctUnique.toFixed(1)}% av användarna har en unik kombination` : '';
 
-  const latest = filteredUsers.map(u => u.createdAt).filter(Boolean).sort((a, b) => b - a)[0];
+  // Role distribution — always totals, unaffected by filters
+  document.getElementById('rdist-all').textContent      = allUsers.length.toLocaleString('sv');
+  document.getElementById('rdist-withrole').textContent = allUsers.filter(u => u.role).length.toLocaleString('sv');
+  document.getElementById('rdist-teacher').textContent  = allUsers.filter(u => u.role === 'teacher').length.toLocaleString('sv');
+  document.getElementById('rdist-student').textContent  = allUsers.filter(u => u.role === 'student').length.toLocaleString('sv');
+  document.getElementById('rdist-other').textContent    = allUsers.filter(u => u.role === 'other').length.toLocaleString('sv');
+  document.getElementById('rdist-norole').textContent   = allUsers.filter(u => !u.role).length.toLocaleString('sv');
+
+  const latest = allUsers.map(u => u.createdAt).filter(Boolean).sort((a, b) => b - a)[0];
   document.getElementById('stat-latest').textContent = latest
     ? latest.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
     : '–';
@@ -946,6 +1070,7 @@ const TAB_INFO = {
   subjectprofile: 'Samma tabell som Per nivå, men spegelvänd — en rad per ämne med kolumner för nivåerna. Klicka på en kolumnrubrik för att sortera.',
   leveloverlap:   'Matris som visar överlapp mellan nivåer. Varje cell visar andelen av rad-nivåns lärare som också valt kolumn-nivån. Används för att se vilka nivåkombinationer som är vanligast att undervisa i.',
   dashboard:      'Kontorsdisplay med nyckeltal i realtid. Layouten efterliknar ett Grafana-dashboard och är tänkt som underlag för att speca upp vad som ska byggas med Prometheus/Grafana.',
+  traffbild:      'Visar hur stor andel av den nationella lärarpopulationen per skolform som har skapat konto. Populationssiffrorna är hämtade från Skolverkets statistik 2024/25 och Lärarprognos 2024. Förskola visas som intervall pga. osäkerhet kring målgrupp.',
 };
 
 let dashboardClockInterval = null;
@@ -971,6 +1096,7 @@ function renderCurrentView() {
   else if (currentView === 'leveloverlap')   renderLevelOverlap();
   else if (currentView === 'valovtid')       renderValOverTid();
   else if (currentView === 'dashboard')      renderDashboard();
+  else if (currentView === 'traffbild')      renderTraffbild();
 }
 
 // ===== DASHBOARD =====
@@ -1426,6 +1552,145 @@ function renderRanking() {
         <div style="padding: 12px 20px">
           ${buildFreqRows(sortedSubjects, maxSF, 'dist-bar-subject', s => s)}
         </div>
+      </div>
+    </div>`;
+}
+
+// ===== TRÄFFBILD VIEW =====
+
+function renderTraffbild() {
+  const users = filteredUsers;
+
+  if (users.length === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga användare matchar de valda filtren.</div></div>';
+    return;
+  }
+
+  // Count registered users per level
+  const levelFreq = {};
+  users.forEach(u => {
+    u.levels.forEach(l => { levelFreq[l] = (levelFreq[l] || 0) + 1; });
+  });
+
+  // Build rows: all levels from LEVEL_ORDER
+  const withData    = [];
+  const withoutData = [];
+
+  for (const key of LEVEL_ORDER) {
+    const count = levelFreq[key] || 0;
+    const pop   = LEVEL_POPULATION[key] || null;
+    if (pop) {
+      withData.push({ key, count, pop });
+    } else {
+      withoutData.push({ key, count });
+    }
+  }
+
+  // Sort withData by LEVEL_ORDER
+  withData.sort((a, b) => LEVEL_ORDER.indexOf(a.key) - LEVEL_ORDER.indexOf(b.key));
+
+  const maxCount = Math.max(...[...withData, ...withoutData].map(r => r.count), 1);
+
+  function popDisplay(pop) {
+    if (pop.high) {
+      const lowNote  = pop.lowNote  ? ` <span style="color:#6b7280;font-size:11px">(${escHtml(pop.lowNote)})</span>`  : '';
+      const highNote = pop.highNote ? ` <span style="color:#6b7280;font-size:11px">(${escHtml(pop.highNote)})</span>` : '';
+      return `${pop.low.toLocaleString('sv')}${lowNote} – ${pop.high.toLocaleString('sv')}${highNote}`;
+    }
+    const note = pop.lowNote ? ` <span style="color:#6b7280;font-size:11px">(${escHtml(pop.lowNote)})</span>` : '';
+    return `${pop.low.toLocaleString('sv')}${note}`;
+  }
+
+  function coverageDisplay(count, pop) {
+    const pctLow  = count / pop.low  * 100;
+    if (pop.high) {
+      const pctHigh = count / pop.high * 100;
+      const barW    = Math.min(Math.round(pctHigh * 2), 100); // scale: 50% = full bar
+      return `
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="dist-bar-wrap" style="flex:1">
+            <div class="traffbild-bar dist-bar" style="width:${barW}%"></div>
+          </div>
+          <span style="white-space:nowrap;min-width:110px;font-size:13px">
+            ${pctHigh.toFixed(2)}% – ${pctLow.toFixed(2)}%
+          </span>
+        </div>`;
+    }
+    const barW = Math.min(Math.round(pctLow * 2), 100); // scale: 50% = full bar
+    return `
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="dist-bar-wrap" style="flex:1">
+          <div class="traffbild-bar dist-bar" style="width:${barW}%"></div>
+        </div>
+        <span style="white-space:nowrap;min-width:60px;font-size:13px">${pctLow.toFixed(2)}%</span>
+      </div>`;
+  }
+
+  function sourceLink(pop) {
+    return `<a href="${escHtml(pop.url)}" target="_blank" rel="noopener"
+               style="font-size:11px;color:#6b7280;text-decoration:underline dotted">${escHtml(pop.sourceLabel)}</a>`;
+  }
+
+  function freqBar(count) {
+    const barW = Math.round(count / maxCount * 100);
+    return `
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="dist-bar-wrap" style="flex:1">
+          <div class="dist-bar dist-bar-level" style="width:${barW}%"></div>
+        </div>
+        <span style="white-space:nowrap;min-width:40px;font-size:13px">${count.toLocaleString('sv')}</span>
+      </div>`;
+  }
+
+  const headerRow = `
+    <div style="display:grid;grid-template-columns:180px 1fr 1fr 1fr;gap:8px 16px;padding:8px 20px 6px;
+                font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;
+                border-bottom:1px solid #e5e7eb">
+      <span>Utbildningsnivå</span>
+      <span>Registrerade (efter filter)</span>
+      <span>Täckningsgrad</span>
+      <span>Population (FTE)</span>
+    </div>`;
+
+  const dataRows = withData.map(({ key, count, pop }) => `
+    <div style="display:grid;grid-template-columns:180px 1fr 1fr 1fr;gap:8px 16px;
+                padding:8px 20px;border-bottom:1px solid #f3f4f6;align-items:center">
+      <span style="font-weight:500;font-size:13px">${escHtml(labelLevel(key))}</span>
+      <div>${freqBar(count)}</div>
+      <div>${coverageDisplay(count, pop)}</div>
+      <div style="font-size:13px">${popDisplay(pop)}<br>${sourceLink(pop)}</div>
+    </div>`).join('');
+
+  const noDataRows = withoutData.map(({ key, count }) => `
+    <div style="display:grid;grid-template-columns:180px 1fr 1fr 1fr;gap:8px 16px;
+                padding:8px 20px;border-bottom:1px solid #f3f4f6;align-items:center;opacity:.7">
+      <span style="font-weight:500;font-size:13px">${escHtml(labelLevel(key))}</span>
+      <div>${freqBar(count)}</div>
+      <span style="color:#9ca3af;font-size:13px">–</span>
+      <span style="color:#9ca3af;font-size:11px;font-style:italic">Population ej tillgänglig i offentlig statistik</span>
+    </div>`).join('');
+
+  const noDataNote = withoutData.length > 0
+    ? `<div style="padding:10px 20px 4px;font-size:11px;color:#9ca3af">
+         Rader markerade med – saknar population i offentlig statistik.
+       </div>`
+    : '';
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Träffbild – täckningsgrad per skolform</h3>
+        <span class="result-count">Andel av nationell lärarpopulation som skapat konto</span>
+      </div>
+      ${headerRow}
+      ${dataRows}
+      ${noDataRows}
+      ${noDataNote}
+      <div style="padding:14px 20px 16px;font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;margin-top:4px">
+        Källdata: Skolverket, Pedagogisk personal i skola och vuxenutbildning 2024/25 samt
+        Lärarprognos 2024 (RAPPORT 2025:2). Siffror avser heltidstjänster (FTE) om inget annat anges.
+        Täckningsgradsbar är skalad så att 50 % fyller hela stapeln.
       </div>
     </div>`;
 }

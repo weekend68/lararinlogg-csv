@@ -557,7 +557,7 @@
     <label class="upload-label" for="file-input">Välj CSV-fil</label>
     <input type="file" id="file-input" accept=".csv" onchange="handleFile(this)">
     <p style="margin-top:20px;margin-bottom:4px;font-size:12px;color:#d1d5db">Vibe-codad med Claude av Johan Möller i syfte att utforska informationen av de inloggade användarna.</p>
-    <p style="margin-top:0;margin-bottom:0;font-size:12px;color:#111827">Verktygsversion 2026-03-18 15:00</p>
+    <p style="margin-top:0;margin-bottom:0;font-size:12px;color:#111827">Verktygsversion 2026-03-25 16:03</p>
   </div>
 </div>
 
@@ -678,6 +678,7 @@
     <button class="tab" id="tab-timeline" onclick="switchView('timeline', this)">Tidslinje</button>
     <button class="tab" id="tab-valovtid" onclick="switchView('valovtid', this)">Val över tid</button>
     <button class="tab" id="tab-dashboard" onclick="switchView('dashboard', this)">Live Dashboard</button>
+    <button class="tab" id="tab-incomplete" onclick="switchView('incomplete', this)">Utan roll</button>
   </div>
 
   <div id="tab-info"></div>
@@ -711,6 +712,13 @@ const LEVEL_LABELS = {
 };
 
 const LEVEL_ORDER = Object.keys(LEVEL_LABELS);
+
+const SPECIAL_SCHOOL_KEYS = new Set([
+  'specialschoolprimary0-3', 'specialschoolprimary4-6', 'specialschoolprimary7-9',
+  'specialneedsschoolf-4',   'specialneedsschool5-7',   'specialneedsschool8-10',
+  'specialschoolsecondary',  'specialschooladults',
+]);
+const SPECIAL_SCHOOL_LABEL = 'Anpassad utbildning';
 
 const PDF = 'https://www.skolverket.se/download/18.dc84e68193ded1bd4915bb7/1737469521050/pdf13190.pdf';
 const LEVEL_POPULATION = {
@@ -761,7 +769,10 @@ let subjectProfileSort = { col: 'n', dir: -1 };
 let matrixMode = 'count';
 let levelOverlapMode = 'pct';   // 'pct' | 'count'
 let levelProfileExact = false;  // false = "Visa alla", true = "Exakta val"
-let valOverTidGranularity = 'day'; // 'day' | 'week'
+let valOverTidGranularity  = 'day'; // 'day' | 'week'
+let incompleteGranularity  = 'day'; // 'day' | 'week'
+let rollmixGranularity     = 'week'; // 'day' | 'week'
+let groupSpecialSchools    = false;
 // ===== CSV PARSING =====
 
 function parseCSVLine(line) {
@@ -1071,6 +1082,7 @@ const TAB_INFO = {
   leveloverlap:   'Matris som visar överlapp mellan nivåer. Varje cell visar andelen av rad-nivåns lärare som också valt kolumn-nivån. Används för att se vilka nivåkombinationer som är vanligast att undervisa i.',
   dashboard:      'Kontorsdisplay med nyckeltal i realtid. Layouten efterliknar ett Grafana-dashboard och är tänkt som underlag för att speca upp vad som ska byggas med Prometheus/Grafana.',
   traffbild:      'Visar hur stor andel av den nationella lärarpopulationen per skolform som har skapat konto. Populationssiffrorna är hämtade från Skolverkets statistik 2024/25 och Lärarprognos 2024. Förskola visas som intervall pga. osäkerhet kring målgrupp.',
+  incomplete:     'Analyserar användare som saknar tilldelad roll — de har påbörjat men inte slutfört registreringen. Elever och övriga tillfrågas inte om nivå/ämnen och för lärare är det frivilligt, så dessa grupper ingår inte här. Kohortåldern visar om de är nyregistrerade (på väg att fullfölja) eller länge inaktiva.',
 };
 
 let dashboardClockInterval = null;
@@ -1097,6 +1109,7 @@ function renderCurrentView() {
   else if (currentView === 'valovtid')       renderValOverTid();
   else if (currentView === 'dashboard')      renderDashboard();
   else if (currentView === 'traffbild')      renderTraffbild();
+  else if (currentView === 'incomplete')     renderIncomplete();
 }
 
 // ===== DASHBOARD =====
@@ -1496,6 +1509,13 @@ function renderRanking() {
     u.subjects.forEach(s => { subjectFreq[s] = (subjectFreq[s] || 0) + 1; });
   });
 
+  if (groupSpecialSchools) {
+    const specialUserSet = new Set();
+    users.forEach(u => { if (u.levels.some(l => SPECIAL_SCHOOL_KEYS.has(l))) specialUserSet.add(u.id); });
+    SPECIAL_SCHOOL_KEYS.forEach(k => { delete levelFreq[k]; });
+    if (specialUserSet.size > 0) levelFreq['__special__'] = specialUserSet.size;
+  }
+
   const sortedLevels   = Object.entries(levelFreq).sort((a, b) => b[1] - a[1]);
   const sortedSubjects = Object.entries(subjectFreq).sort((a, b) => b[1] - a[1]);
 
@@ -1533,6 +1553,9 @@ function renderRanking() {
     }).join('');
   }
 
+  const lvlLabel = key => key === '__special__' ? SPECIAL_SCHOOL_LABEL : labelLevel(key);
+  const specialPill = `<button onclick="groupSpecialSchools=!groupSpecialSchools;renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${groupSpecialSchools ? '#4f46e5' : '#e5e7eb'};background:${groupSpecialSchools ? '#ede9fe' : 'white'};color:${groupSpecialSchools ? '#4f46e5' : '#6b7280'};font-weight:${groupSpecialSchools ? '600' : '400'}">Gruppera anpassad utbildning</button>`;
+
   document.getElementById('table-container').innerHTML = `
     <div class="dist-grid">
       <div class="table-card">
@@ -1540,8 +1563,12 @@ function renderRanking() {
           <h3>Vanligaste utbildningsnivåerna</h3>
           <span class="result-count">Andel användare som valt respektive nivå</span>
         </div>
+        <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center">
+          <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">Visa:</span>
+          ${specialPill}
+        </div>
         <div style="padding: 12px 20px">
-          ${buildFreqRows(sortedLevels, maxLF, 'dist-bar-level', labelLevel)}
+          ${buildFreqRows(sortedLevels, maxLF, 'dist-bar-level', lvlLabel)}
         </div>
       </div>
       <div class="table-card">
@@ -1702,87 +1729,295 @@ function renderTimeline() {
   const fromVal = document.getElementById('filter-from').value;
   const toVal   = document.getElementById('filter-to').value;
 
-  if (!fromVal || !toVal || users.length === 0) {
-    document.getElementById('table-container').innerHTML =
-      '<div class="table-card"><div class="empty-state">Ange ett datumintervall för att visa tidslinjen.</div></div>';
-    return;
-  }
+  // ── Hjälpfunktioner ──────────────────────────────────────────────────────
 
-  const fromDate = new Date(fromVal + 'T00:00:00');
-  const toDate   = new Date(toVal   + 'T23:59:59');
-  const diffDays = (toDate - fromDate) / 86400000;
-  const byHour   = diffDays <= 2;
-
-  // Helper: local-time key for a date
-  function slotKey(d) {
+  function dayKey(d) {
     const y  = d.getFullYear();
     const mo = String(d.getMonth() + 1).padStart(2, '0');
     const da = String(d.getDate()).padStart(2, '0');
-    if (byHour) return `${y}-${mo}-${da}T${String(d.getHours()).padStart(2, '0')}`;
     return `${y}-${mo}-${da}`;
   }
 
-  // Build ordered slots covering the full range
-  const slots = {};
-  const cursor = new Date(fromDate);
-  if (byHour) cursor.setMinutes(0, 0, 0);
-  else        cursor.setHours(0, 0, 0, 0);
-  while (cursor <= toDate) {
-    slots[slotKey(cursor)] = 0;
-    byHour ? cursor.setHours(cursor.getHours() + 1) : cursor.setDate(cursor.getDate() + 1);
+  function mondayOf(d) {
+    const date = new Date(d);
+    const dow  = (date.getDay() + 6) % 7;
+    date.setDate(date.getDate() - dow);
+    date.setHours(0, 0, 0, 0);
+    return date;
   }
 
-  // Count registrations per slot
-  users.forEach(u => {
-    if (!u.createdAt) return;
-    const k = slotKey(u.createdAt);
-    if (k in slots) slots[k]++;
-  });
+  function weekKey(d) {
+    const m  = mondayOf(d);
+    return dayKey(m);
+  }
 
-  const entries  = Object.entries(slots);
-  const maxCount = Math.max(...Object.values(slots), 1);
-  const total    = users.filter(u => u.createdAt).length;
-  const barW     = byHour ? 32 : Math.max(14, Math.min(40, Math.floor(960 / entries.length)));
+  function getISOWeek(d) {
+    const date = new Date(d);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    const week1 = new Date(date.getFullYear(), 0, 4);
+    return 1 + Math.round(((date - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  }
 
-  const bars = entries.map(([key, count], i) => {
-    const barH   = count > 0 ? Math.max(4, Math.round(count / maxCount * 180)) : 0;
-    const filled = count > 0;
+  function isWeekend(dateKey) {
+    const d = new Date(dateKey + 'T12:00:00');
+    return d.getDay() === 0 || d.getDay() === 6;
+  }
 
-    let label, sublabel = '';
-    if (byHour) {
-      const h = key.slice(11);
-      label = h + ':00';
-      // Show date when it changes
-      if (i === 0 || key.slice(0, 10) !== entries[i - 1][0].slice(0, 10)) {
-        const d = new Date(key.slice(0, 10));
-        sublabel = d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
-      }
-    } else {
-      const d = new Date(key + 'T12:00:00');
-      label = d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+  // ── Panel 1: Nyregistreringar per dag/timme (befintlig) ──────────────────
+
+  let dailyPanel = '';
+  if (fromVal && toVal) {
+    const fromDate = new Date(fromVal + 'T00:00:00');
+    const toDate   = new Date(toVal   + 'T23:59:59');
+    const diffDays = (toDate - fromDate) / 86400000;
+    const byHour   = diffDays <= 2;
+
+    function slotKey(d) {
+      const y  = d.getFullYear();
+      const mo = String(d.getMonth() + 1).padStart(2, '0');
+      const da = String(d.getDate()).padStart(2, '0');
+      if (byHour) return `${y}-${mo}-${da}T${String(d.getHours()).padStart(2, '0')}`;
+      return `${y}-${mo}-${da}`;
     }
 
-    return `
-      <div class="chart-col" style="width:${barW}px">
-        <div class="chart-col-body">
-          <span class="chart-count">${count > 0 ? count : ''}</span>
-          <div class="chart-bar ${filled ? 'chart-bar-filled' : 'chart-bar-empty'}" style="height:${filled ? barH : 3}px; width:${barW - 3}px"></div>
-        </div>
-        <span class="chart-label">${label}</span>
-        <span class="chart-label-day">${sublabel}</span>
-      </div>`;
-  }).join('');
+    const slots  = {};
+    const cursor = new Date(fromDate);
+    if (byHour) cursor.setMinutes(0, 0, 0);
+    else        cursor.setHours(0, 0, 0, 0);
+    while (cursor <= toDate) {
+      slots[slotKey(cursor)] = 0;
+      byHour ? cursor.setHours(cursor.getHours() + 1) : cursor.setDate(cursor.getDate() + 1);
+    }
 
-  const granLabel = byHour ? 'per timme' : 'per dag';
+    users.forEach(u => {
+      if (!u.createdAt) return;
+      const k = slotKey(u.createdAt);
+      if (k in slots) slots[k]++;
+    });
+
+    const entries  = Object.entries(slots);
+    const maxCount = Math.max(...Object.values(slots), 1);
+    const total    = users.filter(u => u.createdAt).length;
+    const barW     = byHour ? 32 : Math.max(14, Math.min(40, Math.floor(960 / entries.length)));
+    const vertLabel = !byHour && entries.length > 40;
+
+    const bars = entries.map(([key, count], i) => {
+      const barH   = count > 0 ? Math.max(4, Math.round(count / maxCount * 180)) : 0;
+      const filled = count > 0;
+      const we     = !byHour && isWeekend(key);
+      const color  = we ? '#c4b5fd' : '#4f46e5';
+
+      let label, sublabel = '';
+      if (byHour) {
+        const h = key.slice(11);
+        label = h + ':00';
+        if (i === 0 || key.slice(0, 10) !== entries[i - 1][0].slice(0, 10)) {
+          const d = new Date(key.slice(0, 10) + 'T12:00:00');
+          sublabel = d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+        }
+      } else {
+        const d = new Date(key + 'T12:00:00');
+        label = d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+      }
+
+      const labelStyle = vertLabel
+        ? 'style="writing-mode:vertical-lr;transform:rotate(180deg);height:60px;overflow:hidden;text-align:left;margin-top:2px"'
+        : '';
+
+      return `
+        <div class="chart-col" style="width:${barW}px">
+          <div class="chart-col-body">
+            <span class="chart-count">${count > 0 ? count : ''}</span>
+            <div class="chart-bar ${filled ? 'chart-bar-filled' : 'chart-bar-empty'}" style="height:${filled ? barH : 3}px;width:${barW - 3}px;${filled ? 'background:' + color : ''}"></div>
+          </div>
+          <span class="chart-label" ${labelStyle}>${label}</span>
+          <span class="chart-label-day">${sublabel}</span>
+        </div>`;
+    }).join('');
+
+    const granLabel = byHour ? 'per timme' : 'per dag';
+    dailyPanel = `
+      <div style="padding:12px 20px 4px;font-size:12px;font-weight:600;color:#4f46e5">
+        <span style="display:inline-block;width:10px;height:10px;background:#4f46e5;border-radius:2px;margin-right:5px"></span>Nyregistreringar ${granLabel}
+        <span style="font-weight:400;color:#9ca3af;margin-left:8px">${total.toLocaleString('sv')} st · ${entries.length} perioder
+          ${!byHour ? ' &nbsp;<span style="color:#c4b5fd">■</span> = helg' : ''}
+        </span>
+      </div>
+      <div class="chart-outer" style="padding:0 20px 16px">
+        <div class="chart-inner">${bars}</div>
+      </div>`;
+  } else {
+    dailyPanel = `
+      <div style="padding:12px 20px 16px;font-size:13px;color:#6b7280;border-bottom:1px solid #f3f4f6">
+        Ange ett datumintervall ovanför för att visa daglig/timvis fördelning.
+      </div>`;
+  }
+
+  // ── Panel 2: Kumulativ tillväxtkurva (allUsers, hela historiken) ─────────
+
+  const allDatesAll = allUsers.filter(u => u.createdAt).map(u => u.createdAt);
+  let cumulPanel = '';
+
+  if (allDatesAll.length > 0) {
+    const cumFrom = fromVal ? new Date(fromVal + 'T00:00:00') : new Date(Math.min(...allDatesAll));
+    const cumTo   = toVal   ? new Date(toVal   + 'T23:59:59') : new Date(Math.max(...allDatesAll));
+    cumFrom.setHours(0, 0, 0, 0);
+
+    const cumSlots = {};
+    const cumCursor = new Date(cumFrom);
+    while (cumCursor <= cumTo) {
+      cumSlots[dayKey(cumCursor)] = 0;
+      cumCursor.setDate(cumCursor.getDate() + 1);
+    }
+    allUsers.forEach(u => {
+      if (!u.createdAt || u.createdAt < cumFrom || u.createdAt > cumTo) return;
+      const k = dayKey(u.createdAt);
+      if (k in cumSlots) cumSlots[k]++;
+    });
+
+    const cumEntries  = Object.entries(cumSlots);
+    const totalDays   = cumEntries.length;
+    const cumBarW     = Math.max(3, Math.min(20, Math.floor(960 / totalDays)));
+    const cumPeriodTotal = cumEntries.reduce((s, [, c]) => s + c, 0);
+
+    let running = 0;
+    const cumBars = cumEntries.map(([key, count], i) => {
+      running += count;
+      const barH  = cumPeriodTotal > 0 ? Math.round(running / cumPeriodTotal * 180) : 0;
+      const we    = isWeekend(key);
+      const color = we ? '#c4b5fd' : '#4f46e5';
+      const d     = new Date(key + 'T12:00:00');
+      const dateLabel = d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+      const tip   = `${dateLabel}: ${running.toLocaleString('sv')} totalt (${count > 0 ? '+' + count + ' denna dag' : 'ingen ny'})`;
+      const cumLabel = dateLabel;
+      return `
+        <div class="chart-col" style="width:${cumBarW}px" title="${escAttr(tip)}">
+          <div class="chart-col-body">
+            <div class="chart-bar chart-bar-filled" style="height:${barH}px;width:${cumBarW - 1}px;background:${color}"></div>
+          </div>
+          <span class="chart-label" style="writing-mode:vertical-lr;transform:rotate(180deg);font-size:9px;height:40px;overflow:hidden">${cumLabel}</span>
+        </div>`;
+    }).join('');
+
+    cumulPanel = `
+      <div style="padding:12px 20px 4px;font-size:12px;font-weight:600;color:#4f46e5;border-top:1px solid #f3f4f6">
+        <span style="display:inline-block;width:10px;height:10px;background:#4f46e5;border-radius:2px;margin-right:5px"></span>Kumulativ tillväxt — ${cumPeriodTotal.toLocaleString('sv')} konton
+        <span style="font-weight:400;color:#9ca3af;margin-left:8px">${totalDays} dagar &nbsp;<span style="color:#c4b5fd">■</span> = helg</span>
+      </div>
+      <div class="chart-outer" style="padding:0 20px 16px">
+        <div class="chart-inner">${cumBars}</div>
+      </div>`;
+  }
+
+  // ── Panel 3: Rollmix per vecka/dag ───────────────────────────────────────
+
+  const rmByWeek = rollmixGranularity === 'week';
+
+  function rmSlotKey(d) { return rmByWeek ? weekKey(d) : dayKey(d); }
+  function rmLabel(key) {
+    const d = new Date(key + 'T12:00:00');
+    return rmByWeek ? 'V' + String(getISOWeek(d)).padStart(2, '0')
+                    : d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+  }
+
+  const rmAllDates = allUsers.filter(u => u.createdAt).map(u => u.createdAt);
+  let rollmixPanel = '';
+
+  if (rmAllDates.length > 0) {
+    const rmFrom  = fromVal ? new Date(fromVal + 'T00:00:00') : new Date(Math.min(...rmAllDates));
+    const rmTo    = toVal   ? new Date(toVal   + 'T23:59:59') : new Date(Math.max(...rmAllDates));
+    const rmMin   = new Date(rmFrom);
+    const rmMax   = rmTo;
+    const rmStart = rmByWeek ? mondayOf(rmMin) : new Date(+rmMin);
+    rmStart.setHours(0, 0, 0, 0);
+
+    const rmSlots = [];
+    const rmSeen  = new Set();
+    const rmCursor = new Date(rmStart);
+    rmCursor.setHours(0, 0, 0, 0);
+    while (rmCursor <= rmMax) {
+      const k = rmSlotKey(rmCursor);
+      if (!rmSeen.has(k)) { rmSlots.push(k); rmSeen.add(k); }
+      rmByWeek ? rmCursor.setDate(rmCursor.getDate() + 7) : rmCursor.setDate(rmCursor.getDate() + 1);
+    }
+
+    const rmData = {};
+    rmSlots.forEach(k => { rmData[k] = { teacher: 0, student: 0, other: 0, noRole: 0 }; });
+    allUsers.forEach(u => {
+      if (!u.createdAt || u.createdAt < rmFrom || u.createdAt > rmTo) return;
+      const k = rmSlotKey(u.createdAt);
+      if (!rmData[k]) return;
+      if      (u.role === 'teacher') rmData[k].teacher++;
+      else if (u.role === 'student') rmData[k].student++;
+      else if (u.role === 'other')   rmData[k].other++;
+      else                           rmData[k].noRole++;
+    });
+
+    const rmBarW     = Math.max(rmByWeek ? 14 : 4, Math.min(40, Math.floor(960 / rmSlots.length)));
+    const rmVertical = rmByWeek ? rmSlots.length > 20 : rmSlots.length > 40;
+    const rmLblStyle = rmVertical
+      ? 'style="writing-mode:vertical-lr;transform:rotate(180deg);height:60px;overflow:hidden;text-align:left;margin-top:2px"'
+      : '';
+
+    const rmBars = rmSlots.map((key, i) => {
+      const d = rmData[key];
+      const tot = d.teacher + d.student + d.other + d.noRole;
+      if (tot === 0) return '';
+      const noRolePct = tot > 0 ? Math.round(d.noRole / tot * 100) : 0;
+      const label = rmLabel(key);
+      const tip = `${label}: ${d.teacher} lärare · ${d.student} elever · ${d.other} övriga · ${d.noRole} utan roll`;
+      return `
+        <div class="chart-col" style="width:${rmBarW}px" title="${escAttr(tip)}">
+          <div class="chart-col-body">
+            <span class="chart-count" style="font-size:9px">${noRolePct > 0 ? noRolePct + '%' : ''}</span>
+            <div style="height:180px;width:${rmBarW - 2}px;display:flex;flex-direction:column;overflow:hidden;border-radius:2px 2px 0 0">
+              <div style="flex:${d.noRole || 0};background:#d97706;min-height:${d.noRole > 0 ? 1 : 0}px"></div>
+              <div style="flex:${d.other  || 0};background:#9ca3af;min-height:${d.other  > 0 ? 1 : 0}px"></div>
+              <div style="flex:${d.student|| 0};background:#0369a1;min-height:${d.student> 0 ? 1 : 0}px"></div>
+              <div style="flex:${d.teacher|| 0};background:#7c3aed;min-height:${d.teacher> 0 ? 1 : 0}px"></div>
+            </div>
+          </div>
+          <span class="chart-label" ${rmLblStyle}>${label}</span>
+        </div>`;
+    }).join('');
+
+    const rmPills = [['day','Dag'],['week','Vecka']].map(([val, lbl]) => {
+      const active = rollmixGranularity === val;
+      return `<button onclick="rollmixGranularity='${val}';renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${active ? '#4f46e5' : '#e5e7eb'};background:${active ? '#ede9fe' : 'white'};color:${active ? '#4f46e5' : '#6b7280'};font-weight:${active ? '600' : '400'}">${lbl}</button>`;
+    }).join('');
+
+    const legend = [
+      ['#7c3aed','Lärare'],['#0369a1','Elev'],['#9ca3af','Övrig'],['#d97706','Utan roll']
+    ].map(([c,l]) => `<span style="margin-right:12px"><span style="display:inline-block;width:10px;height:10px;background:${c};border-radius:2px;margin-right:4px"></span>${l}</span>`).join('');
+
+    rollmixPanel = `
+      <div style="padding:12px 20px 8px;border-top:1px solid #f3f4f6;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        <span style="font-size:12px;font-weight:600;color:#374151;flex-shrink:0">Rollmix per ${rmByWeek ? 'vecka' : 'dag'}</span>
+        <span style="font-size:12px;color:#9ca3af">${legend}</span>
+        <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
+          <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em">Per:</span>
+          ${rmPills}
+        </span>
+      </div>
+      <div style="padding:4px 20px 4px;font-size:11px;color:#9ca3af">
+        Siffran ovanpå varje stapel = andel utan roll. Alla roller visas (rollfilter ignoreras). Datumfilter gäller.
+      </div>
+      <div class="chart-outer" style="padding:0 20px 16px">
+        <div class="chart-inner">${rmBars}</div>
+      </div>`;
+  }
+
+  // ── Sammanfoga alla paneler ───────────────────────────────────────────────
+
   document.getElementById('table-container').innerHTML = `
     <div class="table-card">
       <div class="table-header-row">
-        <h3>Nyregistreringar</h3>
-        <span class="result-count">${total.toLocaleString('sv')} registreringar · ${granLabel} · ${entries.length} perioder</span>
+        <h3>Tidslinje</h3>
       </div>
-      <div class="chart-outer">
-        <div class="chart-inner">${bars}</div>
-      </div>
+      ${dailyPanel}
+      ${cumulPanel}
+      ${rollmixPanel}
     </div>`;
 }
 
@@ -1884,6 +2119,11 @@ function renderValOverTid() {
     return 1 + Math.round(((date - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
   }
 
+  const votVertical  = entries.length > 20;
+  const votLblStyle  = votVertical
+    ? 'style="writing-mode:vertical-lr;transform:rotate(180deg);height:60px;overflow:hidden;text-align:left;margin-top:2px"'
+    : '';
+
   function buildBars(entries, valueKey, maxVal, color) {
     return entries.map(e => {
       const avg   = e[valueKey];
@@ -1896,7 +2136,7 @@ function renderValOverTid() {
             <span class="chart-count">${avg.toFixed(1)}</span>
             <div class="chart-bar chart-bar-filled" style="height:${barH}px;width:${barW - 3}px;background:${color}"></div>
           </div>
-          <span class="chart-label">${escHtml(label)}</span>
+          <span class="chart-label" ${votLblStyle}>${escHtml(label)}</span>
         </div>`;
     }).join('');
   }
@@ -1940,6 +2180,222 @@ function renderValOverTid() {
     </div>`;
 }
 
+// ===== UTAN ROLL VIEW =====
+
+function renderIncomplete() {
+  const users  = filteredUsers;
+  const now    = new Date();
+  const byWeek = incompleteGranularity === 'week';
+
+  // Om rollfiltret exkluderar utan-roll-användare — ge en tydlig ledtråd
+  if (selectedRole && selectedRole !== '__empty__') {
+    const roleLabel = selectedRole === '__nonempty__' ? '"Med roll"'
+                    : selectedRole === 'teacher'      ? '"Lärare"'
+                    : selectedRole === 'student'      ? '"Elev"'
+                    : selectedRole === 'other'        ? '"Övrig"'
+                    : `"${selectedRole}"`;
+    document.getElementById('table-container').innerHTML = `
+      <div class="table-card">
+        <div class="empty-state" style="padding:32px 24px">
+          Rollfiltret ${roleLabel} exkluderar användare utan roll.<br>
+          <span style="font-size:13px;color:#6b7280">Byt till <strong>Alla (inkl. utan roll)</strong> eller <strong>Utan roll</strong> i rollfiltret för att se den här analysen.</span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const noRole = users.filter(u => u.role === '');
+  const total  = noRole.length;
+
+  if (total === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga användare utan roll i valt filter.</div></div>';
+    return;
+  }
+
+  // ── Hjälpfunktioner för datum ────────────────────────────────────────────
+
+  function mondayOf(d) {
+    const date = new Date(d);
+    const dow  = (date.getDay() + 6) % 7;
+    date.setDate(date.getDate() - dow);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  function getISOWeek(d) {
+    const date = new Date(d);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    const week1 = new Date(date.getFullYear(), 0, 4);
+    return 1 + Math.round(((date - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  }
+
+  function slotKey(d) {
+    if (byWeek) {
+      const m  = mondayOf(d);
+      const y  = m.getFullYear();
+      const mo = String(m.getMonth() + 1).padStart(2, '0');
+      const da = String(m.getDate()).padStart(2, '0');
+      return `${y}-${mo}-${da}`;
+    }
+    const y  = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${da}`;
+  }
+
+  function slotLabel(key) {
+    const d = new Date(key + 'T12:00:00');
+    if (byWeek) return 'V' + String(getISOWeek(d)).padStart(2, '0');
+    return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+  }
+
+  // ── Panel A: % fastnade per tidsenhet ────────────────────────────────────
+
+  const fromVal = document.getElementById('filter-from').value;
+  const toVal   = document.getElementById('filter-to').value;
+  let rangeStart, rangeEnd;
+  if (fromVal && toVal) {
+    rangeStart = byWeek ? mondayOf(new Date(fromVal + 'T00:00:00')) : new Date(fromVal + 'T00:00:00');
+    rangeEnd   = new Date(toVal + 'T23:59:59');
+    if (!byWeek) rangeStart.setHours(0, 0, 0, 0);
+  } else {
+    const allDates = allUsers.filter(u => u.createdAt).map(u => u.createdAt);
+    if (allDates.length === 0) {
+      document.getElementById('table-container').innerHTML =
+        '<div class="table-card"><div class="empty-state">Inga datum i datan.</div></div>';
+      return;
+    }
+    rangeStart = byWeek ? mondayOf(new Date(Math.min(...allDates))) : new Date(Math.min(...allDates));
+    rangeEnd   = new Date(Math.max(...allDates));
+    if (!byWeek) rangeStart.setHours(0, 0, 0, 0);
+  }
+
+  const slotOrder = [];
+  const cursor    = new Date(rangeStart);
+  cursor.setHours(0, 0, 0, 0);
+  while (cursor <= rangeEnd) {
+    slotOrder.push(slotKey(cursor));
+    byWeek ? cursor.setDate(cursor.getDate() + 7) : cursor.setDate(cursor.getDate() + 1);
+  }
+
+  const cntAll    = {};
+  const cntNoRole = {};
+  slotOrder.forEach(k => { cntAll[k] = 0; cntNoRole[k] = 0; });
+
+  // Räkna mot allUsers (ignorerar rollfilter) för korrekta totaler
+  allUsers.forEach(u => {
+    if (!u.createdAt) return;
+    const k = slotKey(u.createdAt);
+    if (!(k in cntAll)) return;
+    cntAll[k]++;
+    if (u.role === '') cntNoRole[k]++;
+  });
+
+  const pctEntries = slotOrder
+    .filter(k => cntAll[k] > 0)
+    .map(k => ({ key: k, all: cntAll[k], noRole: cntNoRole[k], pct: cntNoRole[k] / cntAll[k] * 100 }));
+
+  const maxPct = Math.max(...pctEntries.map(e => e.pct), 1);
+  const barW   = Math.max(14, Math.min(40, Math.floor(960 / Math.max(pctEntries.length, 1))));
+
+  const granPills = [['day','Dag'],['week','Vecka']].map(([val, lbl]) => {
+    const active = incompleteGranularity === val;
+    return `<button onclick="incompleteGranularity='${val}';renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${active ? '#d97706' : '#e5e7eb'};background:${active ? '#fef3c7' : 'white'};color:${active ? '#92400e' : '#6b7280'};font-weight:${active ? '600' : '400'}">${lbl}</button>`;
+  }).join('');
+
+  const pctBars = pctEntries.map(e => {
+    const barH   = e.pct > 0 ? Math.max(4, Math.round(e.pct / maxPct * 180)) : 0;
+    const label  = slotLabel(e.key);
+    const pctStr = e.pct.toFixed(1) + '%';
+    const tip    = `${label}: ${e.noRole} av ${e.all} (${pctStr})`;
+    return `
+      <div class="chart-col" style="width:${barW}px" title="${escAttr(tip)}">
+        <div class="chart-col-body">
+          <span class="chart-count" style="font-size:9px">${e.pct > 0 ? pctStr : ''}</span>
+          <div class="chart-bar ${e.pct > 0 ? 'chart-bar-filled' : 'chart-bar-empty'}" style="height:${e.pct > 0 ? barH : 3}px;width:${barW - 3}px;${e.pct > 0 ? 'background:#d97706' : ''}"></div>
+        </div>
+        <span class="chart-label">${label}</span>
+      </div>`;
+  }).join('');
+
+  const pctPanel = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Andel som fastnar per ${byWeek ? 'vecka' : 'dag'}</h3>
+        <span class="result-count">${total.toLocaleString('sv')} utan roll · ${pctEntries.length} perioder</span>
+      </div>
+      <div style="padding:8px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:6px;align-items:center">
+        <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">Visa per:</span>
+        ${granPills}
+      </div>
+      <div style="padding:10px 20px 4px;font-size:12px;color:#6b7280">
+        Andel av alla registreringar per ${byWeek ? 'vecka' : 'dag'} som inte slutförde registreringen (ingen roll tilldelad).
+        Räknat mot <em>alla</em> konton oavsett rollfilter.
+      </div>
+      <div class="chart-outer" style="padding:4px 20px 16px">
+        <div class="chart-inner">${pctBars}</div>
+      </div>
+    </div>`;
+
+  // ── Panel B: kohortålder ─────────────────────────────────────────────────
+
+  const ageBuckets = [
+    { label: '0–7 dagar',   min: 0,  max: 7        },
+    { label: '8–14 dagar',  min: 8,  max: 14       },
+    { label: '15–30 dagar', min: 15, max: 30       },
+    { label: '31–60 dagar', min: 31, max: 60       },
+    { label: '61–90 dagar', min: 61, max: 90       },
+    { label: '91+ dagar',   min: 91, max: Infinity },
+  ];
+  const bucketCounts = ageBuckets.map(() => 0);
+  let unknownCount = 0;
+
+  noRole.forEach(u => {
+    if (!u.createdAt) { unknownCount++; return; }
+    const ageDays = Math.floor((now - u.createdAt) / 86400000);
+    const idx = ageBuckets.findIndex(b => ageDays >= b.min && ageDays <= b.max);
+    if (idx >= 0) bucketCounts[idx]++;
+    else unknownCount++;
+  });
+
+  const maxBucket = Math.max(...bucketCounts, unknownCount, 1);
+
+  const cohortRows = ageBuckets.map((b, i) => {
+    const count = bucketCounts[i];
+    return `
+      <div class="dist-row">
+        <span class="dist-key-wide" style="min-width:120px">${b.label}</span>
+        <div class="dist-bar-wrap"><div class="dist-bar" style="width:${Math.round(count / maxBucket * 100)}%;background:#d97706"></div></div>
+        <span class="dist-count">${count.toLocaleString('sv')} <span style="color:#9ca3af">${(count / total * 100).toFixed(0)}%</span></span>
+      </div>`;
+  }).join('');
+
+  const unknownRow = unknownCount > 0 ? `
+    <div class="dist-row">
+      <span class="dist-key-wide" style="min-width:120px">Okänt datum</span>
+      <div class="dist-bar-wrap"><div class="dist-bar" style="width:${Math.round(unknownCount / maxBucket * 100)}%;background:#d1d5db"></div></div>
+      <span class="dist-count">${unknownCount.toLocaleString('sv')}</span>
+    </div>` : '';
+
+  const cohortPanel = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Hur gamla är registreringarna?</h3>
+        <span class="result-count">${total.toLocaleString('sv')} utan roll</span>
+      </div>
+      <div style="padding:12px 20px">
+        ${cohortRows}${unknownRow}
+      </div>
+    </div>`;
+
+  document.getElementById('table-container').innerHTML =
+    pctPanel +
+    '<div style="height:14px"></div>' +
+    cohortPanel;
+}
+
 // ===== LEVEL PROFILE VIEW =====
 
 let levelProfileSort = { col: 'users', dir: -1 };
@@ -1972,6 +2428,16 @@ function renderLevelProfile() {
     });
   }
 
+  if (groupSpecialSchools) {
+    const specialUsersMap = new Map();
+    SPECIAL_SCHOOL_KEYS.forEach(k => {
+      if (levelMap[k]) { levelMap[k].forEach(u => specialUsersMap.set(u.id, u)); delete levelMap[k]; }
+    });
+    if (specialUsersMap.size > 0) levelMap['__special__'] = [...specialUsersMap.values()];
+  }
+
+  const lpLvlLabel = lv => lv === '__special__' ? SPECIAL_SCHOOL_LABEL : lv === '__none__' ? '(Inget val)' : labelLevel(lv);
+
   let rows = Object.entries(levelMap).map(([level, lvlUsers]) => {
     const n           = lvlUsers.length;
     const avgLevels   = lvlUsers.reduce((s, u) => s + u.levels.length,   0) / n;
@@ -1988,8 +2454,8 @@ function renderLevelProfile() {
 
   const { col, dir } = levelProfileSort;
   rows.sort((a, b) => {
-    const labelA = a.level === '__none__' ? '(Inget val)' : labelLevel(a.level);
-    const labelB = b.level === '__none__' ? '(Inget val)' : labelLevel(b.level);
+    const labelA = lpLvlLabel(a.level);
+    const labelB = lpLvlLabel(b.level);
     const av = col === 'level' ? labelA : a[col];
     const bv = col === 'level' ? labelB : b[col];
     return typeof av === 'string' ? av.localeCompare(bv, 'sv') * dir : (av - bv) * dir;
@@ -2027,19 +2493,22 @@ function renderLevelProfile() {
   const toFixed1 = v => v.toFixed(1);
 
   const tableRows = rows.map(r => {
-    const noneRow = r.level === '__none__';
-    const nColor  = noneRow ? '#d1d5db' : '#7c3aed';
+    const noneRow    = r.level === '__none__';
+    const specialRow = r.level === '__special__';
+    const nColor     = noneRow ? '#d1d5db' : '#7c3aed';
     return `
       <tr>
         <td>${noneRow
           ? '<span style="color:#9ca3af;font-style:italic">(Inget val)</span>'
-          : `<span class="tag tag-level">${escHtml(labelLevel(r.level))}</span>`}
+          : `<span class="tag tag-level">${escHtml(lpLvlLabel(r.level))}</span>`}
         </td>
         <td>${miniBar(r.n,           maxN,           nColor,                            { bold: true })}</td>
         <td>${miniBar(r.avgLevels,   maxAvgLevels,   noneRow ? '#d1d5db' : '#4f46e5', { fmt: toFixed1 })}</td>
         <td>${miniBar(r.avgSubjects, maxAvgSubjects, noneRow ? '#d1d5db' : '#0369a1', { fmt: toFixed1 })}</td>
       </tr>`;
   }).join('');
+
+  const lpSpecialPill = `<button onclick="groupSpecialSchools=!groupSpecialSchools;renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${groupSpecialSchools ? '#4f46e5' : '#e5e7eb'};background:${groupSpecialSchools ? '#ede9fe' : 'white'};color:${groupSpecialSchools ? '#4f46e5' : '#6b7280'};font-weight:${groupSpecialSchools ? '600' : '400'}">Gruppera anpassad utbildning</button>`;
 
   document.getElementById('table-container').innerHTML = `
     <div class="table-card">
@@ -2051,6 +2520,7 @@ function renderLevelProfile() {
         <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">Visa:</span>
         <button onclick="levelProfileExact=false;renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${!levelProfileExact ? '#4f46e5' : '#e5e7eb'};background:${!levelProfileExact ? '#ede9fe' : 'white'};color:${!levelProfileExact ? '#4f46e5' : '#6b7280'};font-weight:${!levelProfileExact ? '600' : '400'}">Visa alla</button>
         <button onclick="levelProfileExact=true;renderCurrentView()" style="padding:3px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${levelProfileExact ? '#4f46e5' : '#e5e7eb'};background:${levelProfileExact ? '#ede9fe' : 'white'};color:${levelProfileExact ? '#4f46e5' : '#6b7280'};font-weight:${levelProfileExact ? '600' : '400'}">Exakta val</button>
+        ${lpSpecialPill}
       </div>
       <table>
         <thead>

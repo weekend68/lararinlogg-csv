@@ -557,7 +557,7 @@
     <label class="upload-label" for="file-input">Välj CSV-fil</label>
     <input type="file" id="file-input" accept=".csv" onchange="handleFile(this)">
     <p style="margin-top:20px;margin-bottom:4px;font-size:12px;color:#d1d5db">Vibe-codad med Claude av Johan Möller i syfte att utforska informationen av de inloggade användarna.</p>
-    <p style="margin-top:0;margin-bottom:0;font-size:12px;color:#111827">Verktygsversion 2026-03-25 16:03</p>
+    <p style="margin-top:0;margin-bottom:0;font-size:12px;color:#111827">Verktygsversion 2026-04-01</p>
   </div>
 </div>
 
@@ -1800,7 +1800,7 @@ function renderTimeline() {
     const maxCount = Math.max(...Object.values(slots), 1);
     const total    = users.filter(u => u.createdAt).length;
     const barW     = byHour ? 32 : Math.max(14, Math.min(40, Math.floor(960 / entries.length)));
-    const vertLabel = !byHour && entries.length > 40;
+    const vertLabel = !byHour && entries.length > 20;
 
     const bars = entries.map(([key, count], i) => {
       const barH   = count > 0 ? Math.max(4, Math.round(count / maxCount * 180)) : 0;
@@ -1854,9 +1854,9 @@ function renderTimeline() {
       </div>`;
   }
 
-  // ── Panel 2: Kumulativ tillväxtkurva (allUsers, hela historiken) ─────────
+  // ── Panel 2: Kumulativ tillväxtkurva (filtrerade användare) ─────────────
 
-  const allDatesAll = allUsers.filter(u => u.createdAt).map(u => u.createdAt);
+  const allDatesAll = users.filter(u => u.createdAt).map(u => u.createdAt);
   let cumulPanel = '';
 
   if (allDatesAll.length > 0) {
@@ -1870,7 +1870,7 @@ function renderTimeline() {
       cumSlots[dayKey(cumCursor)] = 0;
       cumCursor.setDate(cumCursor.getDate() + 1);
     }
-    allUsers.forEach(u => {
+    users.forEach(u => {
       if (!u.createdAt || u.createdAt < cumFrom || u.createdAt > cumTo) return;
       const k = dayKey(u.createdAt);
       if (k in cumSlots) cumSlots[k]++;
@@ -1878,7 +1878,7 @@ function renderTimeline() {
 
     const cumEntries  = Object.entries(cumSlots);
     const totalDays   = cumEntries.length;
-    const cumBarW     = Math.max(3, Math.min(20, Math.floor(960 / totalDays)));
+    const cumBarW     = Math.max(14, Math.min(40, Math.floor(960 / totalDays)));
     const cumPeriodTotal = cumEntries.reduce((s, [, c]) => s + c, 0);
 
     let running = 0;

@@ -1,4 +1,48 @@
 id,analytics_id,created_at,age_ranges,subjects,role,should_import
+9c39e8b2-31b6-4d0a-9cae-f427d29a7bfd,5ae2aebc-bae7-4437-824b-2040b38d67ad,2026-04-17T10:02:12.564Z,primary7-9,Samhällskunskap,teacher,false
+f25afade-bf5e-4a58-a106-f55234f64064,36a4b14b-687d-4264-9c23-57a529b85edf,2026-04-17T10:01:25.441Z,university,Biologi,teacher,false
+bb0032cd-3957-405b-9f61-079e601945e1,52146882-ab21-4042-a6c6-da34d7d672d4,2026-04-17T10:01:24.249Z,specialschoolprimary0-3;specialschoolprimary4-6;specialschoolprimary7-9;specialschoolsecondary,,teacher,false
+bc658a58-bcec-40e6-a8f1-d257422fdeb8,183ec2d6-e353-487e-9608-2e90244b6216,2026-04-17T09:55:27.970Z,primary7-9,Biologi;Kemi;Matematik;Fysik;Teknik,teacher,false
+942e2f23-0279-47f4-bbfe-6cf584acf500,3160efc0-40f4-40d5-bba0-6b7aac91751c,2026-04-17T09:53:32.599Z,,,teacher,true
+5bcab022-b814-48be-94e0-6efabfafe652,112e578d-ba9a-4aee-addb-5364b1639e19,2026-04-17T09:52:03.337Z,preschool;primary0-3;primary4-6;specialschoolprimary0-3;specialschoolprimary4-6,"Matematik;Svenska;Svenska som andraspråk och sfi;Värdegrund;Sexualitet, samtycke och relationer;Kemi;Biologi;Engelska;Filosofi;Fysik;Geografi;Hem- och konsumentkunskap;Historia;Idrott och hälsa;Information och media;Miljö och hållbarhet;Bild;Musik;Pedagogiska frågor;Psykologi;Religionskunskap;Samhällskunskap;Slöjd;Teknik",teacher,true
+325b5fe1-ed00-4183-a903-1cbb79e32c9c,6a12234e-c8b9-49b0-95b4-6d3cd3b3905a,2026-04-17T09:43:08.369Z,specialschoolprimary0-3;specialschoolprimary4-6;preschool,,teacher,true
+6571764e-465f-44c4-b31c-5f7bbd5ea499,ccc5104b-229f-46e4-ad0b-775bb01b5a77,2026-04-17T09:42:54.675Z,primary4-6;primary7-9;specialschoolprimary7-9,Engelska;Matematik,teacher,false
+eface032-17fc-4e44-9596-d4fc02c13251,eb32a255-5bf8-4fdf-9515-755622b7b473,2026-04-17T09:40:41.804Z,primary0-3;teachereducation;specialneedsschoolf-4;specialschoolprimary0-3;sfi,Biologi;Engelska;Kemi;Matematik;Svenska;Svenska som andraspråk och sfi;Teknik;Värdegrund;Religionskunskap;Psykologi;Pedagogiska frågor;Filosofi;Fysik;Geografi;Historia;Samhällskunskap,teacher,true
+f9a89497-bcf0-4d5d-91c4-08786dab92a4,26aba095-394e-45e9-b7b5-103781193e6b,2026-04-17T09:34:36.183Z,primary4-6,"Biologi;Engelska;Fysik;Kemi;Matematik;Bild;Teknik;Sexualitet, samtycke och relationer",teacher,true
+2ccd835f-6a79-481b-a29f-78f6d05cfe33,f3d70fc8-a0da-4827-8646-0b25aee7a5c8,2026-04-17T09:34:03.484Z,,,student,true
+d717ac59-7715-41a5-8d45-b4d0b5fd28cd,43cc18e3-f4eb-40d1-865d-9f4528bbd9f1,2026-04-17T09:33:25.224Z,primary7-9;primary4-6,Geografi;Historia;Religionskunskap;Samhällskunskap,teacher,true
+5d91f9ae-c944-4da5-9bf2-78f693fac454,3850de07-5ed9-4723-a956-66148c3c4ee2,2026-04-17T09:27:11.151Z,secondary,Samhällskunskap;Geografi;Historia,teacher,true
+520024a4-237d-4c7f-885c-2154b1c84a2e,aebbecfe-bf79-439d-9fed-5177afe69190,2026-04-17T09:26:45.254Z,primary4-6;primary0-3;specialschoolprimary4-6;specialschoolprimary0-3;primary7-9,"Biologi;Engelska;Fysik;Geografi;Historia;Idrott och hälsa;Kemi;Matematik;Musik;Pedagogiska frågor;Religionskunskap;Information och media;Samhällskunskap;Värdegrund;Teknik;Svenska;Sexualitet, samtycke och relationer",teacher,true
+8f648f27-0145-4272-97f6-9f80fd25af6b,e7faf63c-af38-4b7f-8520-10893d51ee99,2026-04-17T09:22:52.611Z,primary4-6;primary0-3;specialschoolprimary4-6;schoolvux,Biologi;Engelska;Fysik;Geografi;Historia;Kemi;Matematik;Miljö och hållbarhet;Musik;Religionskunskap;Samhällskunskap;Svenska;Svenska som andraspråk och sfi;Teknik;Värdegrund,teacher,false
+f4e1d1aa-9349-45f4-a898-c6fa82705fb4,9deb4b4a-45b3-4e04-9dbb-8c9eb5d560c8,2026-04-17T09:21:21.033Z,primary7-9;secondary;primary4-6,Svenska;Svenska som andraspråk och sfi,teacher,false
+2c4fc364-35dd-4712-a3ad-8cffca57ab2a,157ccd10-4e87-4678-9b13-ad1459fcae7a,2026-04-17T09:21:14.548Z,,,student,true
+154482b6-e83a-4ccf-a7b0-3b2d3cb89b7c,51069650-f2a1-4ae2-b251-c7377567b60e,2026-04-17T09:19:44.098Z,primary4-6,Biologi;Engelska;Information och media;Matematik;Pedagogiska frågor;Svenska;Svenska som andraspråk och sfi;Värdegrund,teacher,true
+3d99dbca-38e7-4f89-87a3-56788ee74a1a,ca7f9b95-d2d6-4b72-841d-a6a85dd6bac3,2026-04-17T09:17:27.961Z,preschool;primary0-3,,teacher,true
+75266a5b-ed10-4f06-8a20-d3b874793203,ca91e993-1803-4c4a-882a-1689d2a66d7d,2026-04-17T09:04:02.888Z,secondary;university,Engelska;Svenska,teacher,false
+7e70797b-5974-43b7-92d1-53d654f26ada,f9aec864-acea-4e30-b4ba-23e36643817f,2026-04-17T09:02:44.920Z,primary7-9;primary4-6;specialschoolprimary4-6,Engelska;Pedagogiska frågor;Psykologi;Moderna språk;Svenska;Svenska som andraspråk och sfi;Värdegrund;Information och media,teacher,false
+b3ac7e6a-2f7e-4d08-94b6-2e46d0e71aff,6b0642f3-c422-4908-a3eb-7b6cd80ef775,2026-04-17T08:59:17.604Z,preschool,,teacher,true
+b7981e62-aeae-4c20-a76d-c6a203a238a2,a57aec2e-d50c-40b3-85b7-dd1f2fc956b3,2026-04-17T08:58:22.810Z,primary7-9,Matematik;Musik;Pedagogiska frågor;Psykologi;Värdegrund,teacher,true
+1f078e68-b438-4c26-b479-7b78f7adb95b,e3d4f378-e831-4d0f-b018-3ccd3175cc11,2026-04-17T08:58:00.628Z,,,other,true
+39d2e3a5-97f9-4bb4-96f4-742d146014d3,6d239a3d-cf78-43b1-8c1b-ecaa882073b5,2026-04-17T08:48:21.982Z,,,student,false
+9b5788f0-f26f-4b15-8ce0-640efe353ab6,76ac8ce5-aaee-4b7b-a41a-ce2f23129406,2026-04-17T08:48:00.580Z,university;secondary;primary7-9;schoolvux;teachereducation,Bild;Pedagogiska frågor;Värdegrund;Miljö och hållbarhet;Filosofi;Information och media,teacher,true
+1960692b-f0d0-4cd3-8a22-b3ef70fba61c,7d63bcf2-694c-48c2-878a-6f495050e04e,2026-04-17T08:41:07.255Z,primary7-9,Engelska;Svenska;Svenska som andraspråk och sfi,teacher,true
+a811456e-0a5f-422b-a2ca-81cd0d04891b,b4584ec3-d1b4-4b91-8a44-1c0e7e3753a9,2026-04-17T08:36:04.335Z,primary4-6;primary0-3,Engelska;Geografi;Historia;Samhällskunskap;Information och media;Religionskunskap;Svenska;Svenska som andraspråk och sfi;Värdegrund,teacher,true
+b06faf86-a93a-4481-8b73-2079bc05d5a0,b2807911-eb09-4799-8758-88bc12764f81,2026-04-17T08:35:43.611Z,secondary,Svenska;Moderna språk,teacher,true
+68e0f833-0c5f-47e6-9e58-8bb19d410259,0b282f6b-e62b-47d7-8a8d-119dbf643917,2026-04-17T08:33:21.340Z,primary4-6,,teacher,true
+5a90bb05-ed78-4029-b3a8-4c269dae9a76,6c929e48-25ac-4453-90da-610cbcd8cb0a,2026-04-17T08:32:48.926Z,primary4-6,Engelska;Svenska;Svenska som andraspråk och sfi;Hem- och konsumentkunskap;Värdegrund,teacher,true
+7e0e3763-cd21-42ce-9e06-8d9fcd977cd0,ae06854e-0cc4-4590-927e-d18563b4639d,2026-04-17T08:24:11.379Z,specialschoolprimary7-9,Idrott och hälsa;Hem- och konsumentkunskap;Svenska;Samhällskunskap;Psykologi;Musik;Pedagogiska frågor;Miljö och hållbarhet;Värdegrund,teacher,false
+8abc4d83-e5b4-4ecb-ac57-d90dcffe0bff,0d7a5b43-0450-490a-aac5-88fea8de07c3,2026-04-17T08:20:04.093Z,primary4-6,Bild;Geografi;Matematik;Religionskunskap;Samhällskunskap;Historia;Svenska,teacher,true
+f7041811-81a9-4752-9e03-d026815a47cf,7e20ad35-ca21-4c5a-947f-b8516eb6ed59,2026-04-17T08:18:33.956Z,primary7-9;primary4-6,Engelska;Moderna språk;Hem- och konsumentkunskap;Information och media,teacher,true
+bf12a795-bd82-47d1-8f76-99c3fa88f854,e9aa3559-6657-489d-a3e9-947859e19665,2026-04-17T08:17:55.435Z,primary4-6;primary7-9;specialschoolprimary7-9;secondary,"Historia;Miljö och hållbarhet;Religionskunskap;Samhällskunskap;Svenska;Sexualitet, samtycke och relationer;Geografi;Värdegrund",teacher,true
+6f30c452-f2da-4434-8629-f38135141d7f,83145b48-ad14-4c55-bbf6-511608c862f1,2026-04-17T08:17:01.877Z,primary0-3,Svenska;Pedagogiska frågor;Matematik;Engelska;Geografi;Bild;Värdegrund;Samhällskunskap,teacher,true
+d0fc355a-f5e4-4a10-b5aa-f6f5fce8748a,061b7de8-6ddc-4671-99ea-d66fd835972c,2026-04-17T08:16:18.886Z,primary7-9;primary4-6;secondary;specialschoolprimary7-9;sfi,Svenska;Svenska som andraspråk och sfi;Samhällskunskap;Moderna språk,teacher,true
+2b07f16f-a87a-4dbc-bd11-8c4c99cfa104,b30cc2e8-405d-42fc-843a-f8ced56440b4,2026-04-17T08:15:52.230Z,primary4-6,"Biologi;Fysik;Information och media;Psykologi;Pedagogiska frågor;Kemi;Matematik;Sexualitet, samtycke och relationer;Teknik;Värdegrund",teacher,true
+80accece-1300-4d05-a6bd-4b7fadc3f758,6ecd0f94-e233-41c0-af4e-b17feebc56ec,2026-04-17T08:15:21.966Z,primary0-3;preschool,Bild;Biologi;Engelska;Fysik;Geografi;Matematik;Pedagogiska frågor;Samhällskunskap;Svenska;Teknik;Värdegrund;Religionskunskap;Historia,teacher,true
+c4b229f1-71e8-49f9-8c66-2c645e4753c7,2df66da3-9ebc-4671-a32d-25ccb0c517ec,2026-04-17T08:12:27.271Z,primary7-9;specialschoolprimary7-9,Svenska,teacher,true
+e3f5ee5e-3017-4643-ba9a-fc1b1879cfa0,0a375857-8d66-48db-9883-976191e44580,2026-04-17T08:11:55.146Z,primary7-9,Svenska;Engelska,teacher,true
+cfa06836-bc27-4cd1-ba65-198d7c91941f,8b2a8286-3191-4270-998f-a3d343c1047b,2026-04-17T07:59:00.510Z,primary0-3;primary4-6;specialneedsschoolf-4;specialneedsschool5-7;teachereducation,Svenska;Värdegrund;Engelska;Samhällskunskap,teacher,true
+8fbb6385-8142-4196-8456-69a12dfc8629,9a6f18b9-3d0d-4f22-b86c-157d7d9f63a9,2026-04-17T07:54:13.682Z,primary0-3;primary4-6,Engelska;Geografi;Historia;Religionskunskap;Samhällskunskap;Svenska;Värdegrund,teacher,true
+003c5d46-5600-4631-bd26-9017057b84a6,40847af6-7f1a-409a-83b3-a0f05d6db65a,2026-04-17T07:46:37.901Z,primary4-6;primary7-9,Engelska;Historia;Värdegrund,teacher,false
 7a8ddcd3-579f-418d-bf4f-faa82840dea0,7e5ee855-cc29-46c8-a76f-308c90f107b8,2026-04-17T07:36:45.217Z,primary7-9,Geografi;Historia;Information och media;Miljö och hållbarhet;Religionskunskap;Samhällskunskap,teacher,false
 62812d94-a108-40d8-8833-7a8b6642fe85,58bc0745-477a-4e05-84f6-092a7e78afde,2026-04-17T07:36:02.438Z,,,student,true
 edcf7d47-4081-417f-ba51-8520fb39cb32,3e5d40d2-99b8-4c62-8320-0e7c811eaf97,2026-04-17T07:32:38.196Z,primary4-6;primary7-9,"Geografi;Historia;Information och media;Religionskunskap;Samhällskunskap;Svenska;Miljö och hållbarhet;Sexualitet, samtycke och relationer",teacher,true
@@ -7383,7 +7427,7 @@ c7c398ed-b8a2-4952-8dd4-403ca7365bf3,6c545d71-b948-40c4-9b45-56fcde6f799b,2026-0
 1843323e-6e5f-453f-bdd0-aa4f60ae1f55,7a41fe89-bc1d-41f6-8538-0b4281763a62,2026-03-10T13:08:40.689Z,primary7-9;primary4-6,Engelska;Moderna språk,teacher,true
 b8e9515a-c835-4e63-99fe-1316361eded6,38178bfc-da4d-4bd1-9a84-a844f5abdc14,2026-03-10T13:04:06.397Z,,,other,false
 bdf43c3b-bcd8-43af-ba37-b3c70d213c78,0e883307-c7e0-424c-b061-965f8435aeea,2026-03-10T13:04:02.905Z,primary0-3;primary4-6,Historia;Kemi;Matematik;Fysik;Svenska;Teknik;Biologi,teacher,false
-103866fc-a400-4ca3-b1bd-93645158ea3e,7be97b0b-2d34-4597-a8cb-9bb814a4f2e7,2026-03-10T13:03:08.345Z,primary0-3;primary4-6;preschool,Biologi;Engelska;Historia;Matematik;Samhällskunskap;Slöjd;Teknik,teacher,true
+103866fc-a400-4ca3-b1bd-93645158ea3e,7be97b0b-2d34-4597-a8cb-9bb814a4f2e7,2026-03-10T13:03:08.345Z,primary0-3;primary4-6;preschool;specialschoolprimary7-9;specialneedsschoolf-4;specialneedsschool5-7;specialneedsschool8-10;specialschoolprimary0-3;specialschoolprimary4-6;primary7-9;specialschoolsecondary,Biologi;Engelska;Historia;Matematik;Samhällskunskap;Slöjd;Teknik;Kemi;Fysik;Geografi;Religionskunskap;Svenska,teacher,true
 bdadc2ef-697f-47ca-a6aa-f60ea6cf6009,c8698aa4-c584-433e-b938-f365f6af94bf,2026-03-10T13:03:03.187Z,primary7-9,Matematik;Teknik;Fysik,teacher,true
 6ebf047c-d591-48be-95a8-d5ecd625a14f,009f0bfd-0520-4b04-a954-422ebaae2851,2026-03-10T13:02:45.010Z,primary0-3,Matematik;Pedagogiska frågor;Samhällskunskap;Historia;Värdegrund;Teknik;Svenska;Svenska som andraspråk och sfi,teacher,true
 d7adc192-0fca-4645-8330-eb1f6f67a86a,1669edc4-4ae6-44bb-bad5-dae142609408,2026-03-10T13:00:28.792Z,primary4-6;primary0-3,Historia;Kemi;Geografi;Biologi;Svenska;Värdegrund,teacher,true
@@ -9955,47 +9999,3 @@ bceaeb2e-b7f2-4405-a7d8-3953b1c15233,b0b0c80d-4a13-491a-80e0-538466d6cc29,2026-0
 f7d4ef03-f802-4873-8de4-04ff82138d18,3ff8ee18-b9bd-4139-b435-7ad0753295c1,2026-03-02T19:20:10.712Z,primary4-6,"Geografi;Historia;Pedagogiska frågor;Religionskunskap;Samhällskunskap;Sexualitet, samtycke och relationer;Värdegrund",teacher,true
 0232ab80-aba7-4ea0-98b7-0b64eb4fd7a3,17f1b4e6-6c13-4945-8600-b4d02d8fdee0,2026-03-02T19:19:12.256Z,secondary;primary0-3;primary4-6;primary7-9,"Bild;Engelska;Biologi;Geografi;Historia;Information och media;Miljö och hållbarhet;Moderna språk;Modersmål;Pedagogiska frågor;Psykologi;Religionskunskap;Samhällskunskap;Sexualitet, samtycke och relationer;Slöjd;Svenska;Svenska som andraspråk och sfi;Värdegrund;Hem- och konsumentkunskap",teacher,true
 80705f83-9450-43d7-a529-821c9d27698b,6e9ce9d8-1482-43b9-bc4b-f60215bb5fb4,2026-03-02T18:44:17.363Z,primary4-6,"Fysik;Geografi;Historia;Kemi;Matematik;Religionskunskap;Samhällskunskap;Svenska;Teknik;Värdegrund;Svenska som andraspråk och sfi;Sexualitet, samtycke och relationer;Biologi",teacher,true
-39bb476a-f185-45cd-8762-2be937962e87,8a6e921a-7d98-4490-83b5-36d61de16b46,2026-03-02T18:26:54.477Z,specialschoolprimary4-6;primary0-3;primary4-6,"Biologi;Engelska;Fysik;Geografi;Historia;Idrott och hälsa;Information och media;Kemi;Matematik;Miljö och hållbarhet;Pedagogiska frågor;Religionskunskap;Samhällskunskap;Sexualitet, samtycke och relationer;Slöjd;Svenska;Svenska som andraspråk och sfi;Teknik;Värdegrund",teacher,true
-948ff42e-40fb-4369-a33d-45bd2bfb7574,1f111ccf-d5bf-4fbe-9dcc-908a0001660c,2026-03-02T18:13:22.517Z,primary0-3,Bild;Engelska;Matematik;Samhällskunskap;Religionskunskap;Svenska;Värdegrund;Teknik,teacher,true
-83d10595-b0aa-4a35-8c51-577a0ec68b19,9248f4ce-f23b-426f-a176-c2c25770a3d9,2026-03-02T17:58:36.773Z,,,,
-2d175d3a-4ef6-453b-929c-9f515a73ecda,acc71c24-cd29-4ea8-905f-aff7a6858168,2026-03-02T17:47:46.875Z,primary0-3;primary4-6;primary7-9,Bild;Biologi;Engelska;Musik;Religionskunskap;Samhällskunskap;Geografi;Historia;Svenska;Svenska som andraspråk och sfi;Kemi;Fysik;Matematik;Värdegrund;Teknik;Information och media,teacher,true
-215d9ce0-d216-48f6-9c36-131eab087a2f,03c3b6c0-6dc4-44be-8d9c-447efa55e861,2026-03-02T16:52:09.885Z,primary0-3,"Engelska;Geografi;Historia;Idrott och hälsa;Matematik;Miljö och hållbarhet;Biologi;Bild;Fysik;Samhällskunskap;Religionskunskap;Musik;Kemi;Sexualitet, samtycke och relationer;Svenska;Svenska som andraspråk och sfi;Teknik;Värdegrund",teacher,true
-80df935a-8057-4032-a31b-d946a75255ef,254b3d7b-434b-491c-90df-99e00f328669,2026-03-02T16:22:43.679Z,primary4-6,Samhällskunskap;Religionskunskap;Matematik;Kemi;Historia;Geografi;Fysik;Engelska;Svenska;Teknik;Värdegrund,teacher,true
-793bde7f-9e76-4172-922b-bf45c27e78eb,0f985b43-ef48-4c44-a2e1-6267d9686192,2026-03-02T16:18:26.795Z,,,student,true
-b6baf9d9-83dd-4ab7-bed7-da6a1614acc2,f165378f-a2a7-4c9d-8893-79aa8a0b1704,2026-03-02T16:01:08.823Z,primary4-6,Engelska;Svenska;Teknik,teacher,true
-3f5961bd-29f1-475f-907d-bbe866872c86,b44d5e9d-a221-413e-8a8e-38a4e20a237b,2026-03-02T15:53:46.810Z,secondary,Värdegrund;Hem- och konsumentkunskap,teacher,true
-fdb40363-a245-468f-91e8-ebf11733cb35,35792858-97d8-4339-b571-fdaf5c9875a0,2026-03-02T15:49:47.741Z,primary4-6,Engelska;Svenska;Matematik,teacher,true
-863c8bac-0dd9-4027-ad0e-9ee69abf085b,68344268-3849-4432-a759-5f6962250ca8,2026-03-02T15:27:12.913Z,university;teachereducation;schoolvux,Matematik;Svenska;Värdegrund;Pedagogiska frågor,teacher,false
-18fd4be9-20a1-4cbe-826c-cffbe2f79764,3bc7be45-93e4-49df-bc3a-0cbf5cbbfed2,2026-03-02T15:11:16.397Z,specialschoolprimary0-3;specialschoolprimary7-9;primary4-6;primary0-3;primary7-9;specialschoolprimary4-6,Engelska;Religionskunskap;Samhällskunskap;Svenska;Matematik;Historia,teacher,true
-555f7aad-e8a5-4fdf-ac6b-7f8e71841965,d8cf02dd-fe5a-4b1d-8770-a38a2bb111d7,2026-03-02T15:00:10.255Z,primary7-9;primary4-6,Moderna språk,teacher,true
-c41b96be-ce71-4293-8ca2-428f907cd826,54670934-a197-4ece-bdab-185b133a0d46,2026-03-02T14:43:57.197Z,preschool,Miljö och hållbarhet;Pedagogiska frågor,teacher,false
-cf74b1ba-9ffd-4d10-b697-0e6d94c308e3,97dedebb-b2c0-4870-9fb7-977af343aff9,2026-03-02T14:33:11.200Z,primary0-3,Biologi;Engelska;Fysik;Geografi;Historia;Matematik;Pedagogiska frågor;Psykologi;Religionskunskap;Samhällskunskap;Svenska;Svenska som andraspråk och sfi;Teknik;Värdegrund,teacher,true
-cc1871b7-1e74-44b8-ad9f-af0aa277126b,1d8f0dfd-572f-4756-8fa3-c226e7dbd75f,2026-03-02T14:29:59.281Z,secondary,"Samhällskunskap;Miljö och hållbarhet;Pedagogiska frågor;Sexualitet, samtycke och relationer;Värdegrund",teacher,true
-bdbf693a-e89a-4e7a-8020-785253cccc7e,5ba67111-8a13-4341-9637-eeb13bc21ea5,2026-03-02T14:26:26.972Z,specialschoolsecondary;primary4-6;specialschoolprimary7-9;sfi,Matematik;Geografi;Svenska;Svenska som andraspråk och sfi;Biologi;Fysik;Kemi,teacher,true
-ccbcbfe0-9b1a-414e-8050-4223c197b9de,64180ea9-d3ad-4508-8cb3-185a065ed708,2026-03-02T14:22:52.160Z,primary0-3,Matematik;Idrott och hälsa;Pedagogiska frågor;Värdegrund;Biologi;Geografi;Miljö och hållbarhet,teacher,true
-dca88438-73f1-41ec-939d-d75d69f2cc5e,85cd9552-20b3-41ec-8a3a-4d1af7d88c7e,2026-03-02T14:13:47.127Z,primary7-9,Biologi;Engelska,teacher,true
-1a1665a3-a400-4965-a08b-572554af48f5,747a30d6-530d-45af-b4ba-a8448fa75d3f,2026-03-02T14:04:07.723Z,primary7-9,Svenska;Svenska som andraspråk och sfi;Pedagogiska frågor;Värdegrund;Psykologi,teacher,true
-a544ffb3-5fd2-48b8-92ef-9e7ff2bd5ac8,3efe4175-0460-4590-b59a-05e9080ea7a9,2026-03-02T13:51:28.879Z,primary4-6;primary7-9,Hem- och konsumentkunskap,teacher,true
-5ef172a8-339c-4b2c-a96a-7423d1e4b053,3d38fa78-0d68-4c1e-8c07-18f489f2a463,2026-03-02T13:11:05.532Z,,,other,false
-99266360-09e1-4e2a-ab0b-595c67ed3521,2871a8eb-94b1-4517-b3ad-8231584ed2be,2026-03-02T12:52:28.947Z,komvuxgrundvux,Svenska;Moderna språk,teacher,false
-c0ea8d66-f445-4d54-bf9c-ad73a1ae2aff,45cf5403-7625-4047-bf22-3700e3a83d07,2026-03-02T12:51:45.901Z,preschool,Pedagogiska frågor;Värdegrund;Matematik;Historia,teacher,true
-28c847bf-6f15-4e81-ad21-55bc0ceeb084,a4323799-9244-4946-b735-86d63e6e26ba,2026-03-02T12:41:51.113Z,primary7-9,Moderna språk,teacher,true
-48a1ea85-3224-420f-9d72-4136ebf06986,dfbf1490-41a5-4ecf-97bc-e20bc35aa4a9,2026-03-02T12:34:16.341Z,,,other,true
-123a8ea4-cb11-47dc-b00f-594897812426,5e03ac20-b9cf-43b9-b2ab-31a0f718cc2b,2026-03-02T12:21:37.301Z,primary4-6;primary0-3,Engelska;Geografi;Historia;Samhällskunskap;Religionskunskap;Matematik;Svenska;Värdegrund,teacher,true
-45e1faa4-a604-48e3-8c35-180ac6861d93,4c9c62e1-4365-442f-9ce8-003027aaa196,2026-03-02T12:16:24.328Z,primary7-9,Engelska;Svenska,teacher,true
-e7bb463c-e326-4709-a81d-b38837a7f39d,73be91d4-ac28-4d2c-a110-1e34e68ed1a3,2026-03-02T12:14:29.626Z,,,other,false
-aaa68f46-0c74-40ec-bc4d-787beed57f0f,55e676a9-de39-4e3a-9866-86d3de14a819,2026-03-02T12:03:16.647Z,,,other,true
-bc9282d4-e274-4d8b-843d-c511cc36e4dd,08a6afa0-4523-4fd1-9db8-ff61b841fe60,2026-03-02T11:51:21.882Z,,,,
-48822c0a-5b75-40c1-8d82-5c4bffa331a6,52d0b395-c4cf-4f6e-92c2-5b625a5bf34b,2026-03-02T11:34:25.912Z,primary7-9,Engelska;Svenska;Svenska som andraspråk och sfi;Pedagogiska frågor,teacher,true
-7b0b8853-a067-45a4-9a4d-ff8312aba8fa,cba57baf-1bed-416f-bc3b-c1de153cc4ae,2026-03-02T11:21:00.633Z,preschool;primary0-3;specialschoolprimary0-3,Engelska;Matematik;Svenska;Teknik;Biologi;Idrott och hälsa,teacher,true
-e746ca6a-f812-4eba-8ff8-2579756ba956,9297847e-5fe9-4ab6-bd16-21154a4d3aa7,2026-03-02T11:18:13.103Z,secondary;primary7-9,Bild;Hem- och konsumentkunskap;Historia;Moderna språk;Pedagogiska frågor,teacher,true
-5c62be76-9bb3-42c5-9f6b-47d17968ec61,37e90eb2-4bdb-4e33-85bd-b63ced16429b,2026-03-02T11:06:44.776Z,preschool;primary0-3;primary4-6;primary7-9;secondary;specialschoolprimary0-3;specialschoolprimary4-6;specialschoolprimary7-9,,teacher,false
-0ca83aeb-c7d6-4d12-9811-73eb40a0570b,0554294f-8196-40de-a1f5-7e37bb1194e6,2026-03-02T11:03:06.460Z,preschool;primary0-3;primary4-6;specialschoolprimary0-3;specialschoolprimary4-6;teachereducation,"Bild;Biologi;Engelska;Filosofi;Fysik;Geografi;Hem- och konsumentkunskap;Historia;Idrott och hälsa;Information och media;Samhällskunskap;Religionskunskap;Psykologi;Pedagogiska frågor;Musik;Modersmål;Moderna språk;Miljö och hållbarhet;Matematik;Kemi;Sexualitet, samtycke och relationer;Slöjd;Svenska;Svenskt teckenspråk;Svenska som andraspråk och sfi;Teknik;Värdegrund",teacher,true
-62d91925-3bd6-4a9f-8689-2f3d8697a947,550b7c22-6fe9-4cd7-a2d7-12544cc10a85,2026-03-02T11:00:38.197Z,primary0-3;primary4-6;preschool,Bild;Biologi;Engelska;Historia;Matematik;Moderna språk;Musik;Religionskunskap;Svenska;Svenska som andraspråk och sfi;Fysik;Kemi;Samhällskunskap,teacher,true
-ad761718-1837-4421-914f-eeea008e052a,bf2cf2d8-9b4e-4e31-a3d3-52ebbad7ad03,2026-03-02T10:24:23.938Z,,,other,false
-f158c07d-caaa-4340-8538-0dab6603d75b,87341b60-16a1-4882-8d61-0c071055232f,2026-03-02T10:07:31.062Z,primary7-9,,teacher,true
-4d41556a-fb2d-48f1-8448-b97ac0774c35,ab6445ea-91c6-49d2-8db9-7f12458429cb,2026-03-02T10:05:20.765Z,preschool,Filosofi,teacher,true
-fc38efba-a6f1-4476-94e3-ff576ea0261c,0b12c968-4202-4661-bf96-8702770468ed,2026-03-02T10:03:07.218Z,primary7-9;primary4-6;secondary,Engelska;Svenska som andraspråk och sfi;Svenska,teacher,false
-40312fa6-a135-4894-942c-2c842bb552dd,8e8c0cd7-3cb0-442e-8977-b4b0a8807412,2026-03-02T10:02:02.019Z,,,,
-a4ca099f-1f26-472d-b304-0b1e08aa291c,7aaa8ed0-cf02-4dc5-843b-bcf7a365eea2,2026-03-02T10:01:55.566Z,,,,
-01eaf975-3f74-4c73-a5de-0299e246c795,29fef6f3-33d7-4b75-8d2d-d70a665757c3,2026-03-02T10:01:49.142Z,,,,

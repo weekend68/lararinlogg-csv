@@ -581,7 +581,15 @@
     <div class="upload-icon">📊</div>
     <h2>Kombinationsanalys</h2>
     <p>Utforska kombinationer av utbildningsnivåer och ämnen bland inloggade lärare.</p>
-    <button class="bundled-btn" onclick="loadBundledFile()">Använd senaste exporten</button>
+    <button class="bundled-btn" id="bundled-btn" onclick="showPasswordPrompt()">Använd senaste exporten</button>
+    <div id="pw-form" style="display:none;margin-top:12px">
+      <input type="password" id="pw-input" placeholder="Lösenord" autocomplete="off"
+        style="padding:8px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;width:200px;outline:none"
+        onkeydown="if(event.key==='Enter')checkPassword()">
+      <button onclick="checkPassword()"
+        style="margin-left:8px;padding:8px 16px;background:#0f172a;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">OK</button>
+      <p id="pw-error" style="display:none;color:#dc2626;font-size:13px;margin-top:8px">Fel lösenord</p>
+    </div>
     <div class="upload-divider">— eller —</div>
     <label class="upload-label" for="file-input">Välj CSV-fil</label>
     <input type="file" id="file-input" accept=".csv">
@@ -914,6 +922,27 @@ function loadFile(file) {
   const reader = new FileReader();
   reader.onload = e => loadCSVText(e.target.result, file.name);
   reader.readAsText(file, 'UTF-8');
+}
+
+function showPasswordPrompt() {
+  const form = document.getElementById('pw-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  if (form.style.display === 'block') {
+    document.getElementById('pw-input').focus();
+    document.getElementById('pw-error').style.display = 'none';
+  }
+}
+
+function checkPassword() {
+  const val = document.getElementById('pw-input').value;
+  if (val === 'grundskola') {
+    document.getElementById('pw-form').style.display = 'none';
+    document.getElementById('pw-input').value = '';
+    loadBundledFile();
+  } else {
+    document.getElementById('pw-error').style.display = 'block';
+    document.getElementById('pw-input').select();
+  }
 }
 
 function loadBundledFile() {

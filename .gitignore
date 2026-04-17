@@ -1,0 +1,13 @@
+# Claude Code — local permissions (not for version control)
+.claude/settings.local.json
+
+# macOS
+.DS_Store
+
+# CSV data files — only users-export.csv is tracked (bundled export)
+*.csv
+!users-export.csv
+
+# Other data/export files
+*.pdf
+*.png

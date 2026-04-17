@@ -44,6 +44,14 @@
     .upload-icon { font-size: 52px; margin-bottom: 20px; }
     .upload-card h2 { font-size: 22px; margin-bottom: 8px; }
     .upload-card p { color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 28px; }
+    .upload-card {
+      transition: border-color 0.15s, background 0.15s;
+      border: 2px dashed transparent;
+    }
+    .upload-card.drag-over {
+      border-color: #4f46e5;
+      background: #f5f3ff;
+    }
     .upload-label {
       display: inline-block;
       padding: 12px 28px;
@@ -56,6 +64,25 @@
       transition: background 0.15s;
     }
     .upload-label:hover { background: #4338ca; }
+    .bundled-btn {
+      display: inline-block;
+      padding: 12px 28px;
+      background: #0f172a;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 15px;
+      border: none;
+      transition: background 0.15s;
+      margin-bottom: 12px;
+    }
+    .bundled-btn:hover { background: #1e293b; }
+    .upload-divider {
+      color: #9ca3af;
+      font-size: 13px;
+      margin: 4px 0 12px;
+    }
     #file-input { display: none; }
 
     /* Main layout */
@@ -550,14 +577,17 @@
 
 <!-- Upload screen -->
 <div id="upload-section">
-  <div class="upload-card">
+  <div class="upload-card" id="drop-zone">
     <div class="upload-icon">📊</div>
     <h2>Kombinationsanalys</h2>
-    <p>Ladda upp <strong>users-export.csv</strong> för att utforska kombinationer av utbildningsnivåer och ämnen, och identifiera ovanliga registreringar.</p>
+    <p>Utforska kombinationer av utbildningsnivåer och ämnen bland inloggade lärare.</p>
+    <button class="bundled-btn" onclick="loadBundledFile()">Använd senaste exporten</button>
+    <div class="upload-divider">— eller —</div>
     <label class="upload-label" for="file-input">Välj CSV-fil</label>
-    <input type="file" id="file-input" accept=".csv" onchange="handleFile(this)">
+    <input type="file" id="file-input" accept=".csv">
+    <p style="margin-top:16px;font-size:13px;color:#9ca3af">Du kan också dra och släppa en fil här</p>
     <p style="margin-top:20px;margin-bottom:4px;font-size:12px;color:#d1d5db">Vibe-codad med Claude av Johan Möller i syfte att utforska informationen av de inloggade användarna.</p>
-    <p style="margin-top:0;margin-bottom:0;font-size:12px;color:#111827">Verktygsversion 2026-04-01</p>
+    <p style="margin-top:0;margin-bottom:0;font-size:12px;color:#111827">Verktygsversion 2026-04-17</p>
   </div>
 </div>
 
@@ -844,50 +874,72 @@ function processRows(rows) {
 
 // ===== FILE HANDLING =====
 
-function handleFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-  document.getElementById('header-filename').textContent = file.name;
+function loadCSVText(text, filename) {
+  document.getElementById('header-filename').textContent = filename;
+  const rows = parseCSV(text);
+  allUsers = processRows(rows);
 
+  const levelsSet   = new Set();
+  const subjectsSet = new Set();
+  allUsers.forEach(u => {
+    u.levels.forEach(l   => levelsSet.add(l));
+    u.subjects.forEach(s => subjectsSet.add(s));
+  });
+
+  allLevels = [...levelsSet].sort((a, b) => {
+    const ai = LEVEL_ORDER.indexOf(a), bi = LEVEL_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+  allSubjects = [...subjectsSet].sort((a, b) => a.localeCompare(b, 'sv'));
+
+  buildDropdown('levels',   allLevels,   labelLevel);
+  buildDropdown('subjects', allSubjects, s => s);
+
+  const dates = allUsers.map(u => u.createdAt).filter(Boolean).sort((a, b) => a - b);
+  if (dates.length > 0) {
+    document.getElementById('filter-from').value = toDateInput(dates[0]);
+    document.getElementById('filter-to').value   = toDateInput(dates[dates.length - 1]);
+  }
+
+  document.getElementById('upload-section').style.display  = 'none';
+  document.getElementById('analysis-section').style.display = 'block';
+  document.getElementById('filter-role').value = '__nonempty__';
+  applyFilters();
+}
+
+function loadFile(file) {
   const reader = new FileReader();
-  reader.onload = e => {
-    const rows = parseCSV(e.target.result);
-    allUsers = processRows(rows);
-
-    // Collect unique levels and subjects
-    const levelsSet   = new Set();
-    const subjectsSet = new Set();
-    allUsers.forEach(u => {
-      u.levels.forEach(l   => levelsSet.add(l));
-      u.subjects.forEach(s => subjectsSet.add(s));
-    });
-
-    allLevels = [...levelsSet].sort((a, b) => {
-      const ai = LEVEL_ORDER.indexOf(a), bi = LEVEL_ORDER.indexOf(b);
-      if (ai === -1 && bi === -1) return a.localeCompare(b);
-      if (ai === -1) return 1;
-      if (bi === -1) return -1;
-      return ai - bi;
-    });
-    allSubjects = [...subjectsSet].sort((a, b) => a.localeCompare(b, 'sv'));
-
-    buildDropdown('levels',   allLevels,   labelLevel);
-    buildDropdown('subjects', allSubjects, s => s);
-
-    // Set default date range
-    const dates = allUsers.map(u => u.createdAt).filter(Boolean).sort((a, b) => a - b);
-    if (dates.length > 0) {
-      document.getElementById('filter-from').value = toDateInput(dates[0]);
-      document.getElementById('filter-to').value   = toDateInput(dates[dates.length - 1]);
-    }
-
-    document.getElementById('upload-section').style.display  = 'none';
-    document.getElementById('analysis-section').style.display = 'block';
-    document.getElementById('filter-role').value = '__nonempty__';
-    applyFilters();
-  };
+  reader.onload = e => loadCSVText(e.target.result, file.name);
   reader.readAsText(file, 'UTF-8');
 }
+
+function loadBundledFile() {
+  fetch('users-export.csv')
+    .then(r => {
+      if (!r.ok) throw new Error('Kunde inte hämta filen');
+      return r.text();
+    })
+    .then(text => loadCSVText(text, 'users-export.csv'))
+    .catch(() => alert('Ingen inbyggd fil hittades. Kontrollera att users-export.csv finns i samma mapp.'));
+}
+
+// Drag-and-drop
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = [...e.dataTransfer.files].find(f => f.name.endsWith('.csv'));
+  if (file) loadFile(file);
+});
+
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+});
 
 function toDateInput(d) {
   return d.toISOString().split('T')[0];

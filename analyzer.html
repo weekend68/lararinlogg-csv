@@ -566,6 +566,17 @@
       padding: 22px 26px;
       border: 1px solid #334155;
     }
+    /* Archetype view */
+    .archetype-list { display: flex; flex-direction: column; }
+    .archetype-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; flex-wrap: wrap; }
+    .archetype-row:last-child { border-bottom: none; }
+    .archetype-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .archetype-name { width: 170px; font-size: 14px; font-weight: 600; color: #374151; flex-shrink: 0; }
+    .archetype-bar-wrap { width: 220px; background: #f3f4f6; border-radius: 4px; height: 16px; overflow: hidden; flex-shrink: 0; }
+    .archetype-bar { height: 100%; border-radius: 4px; }
+    .archetype-count { width: 100px; font-size: 14px; font-weight: 700; color: #374151; flex-shrink: 0; }
+    .archetype-pct { font-size: 12px; font-weight: 400; color: #9ca3af; margin-left: 4px; }
+    .archetype-tags { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
   </style>
 </head>
 <body>
@@ -717,6 +728,7 @@
     <button class="tab" id="tab-valovtid" onclick="switchView('valovtid', this)">Val över tid</button>
     <button class="tab" id="tab-dashboard" onclick="switchView('dashboard', this)">Live Dashboard</button>
     <button class="tab" id="tab-incomplete" onclick="switchView('incomplete', this)">Utan roll</button>
+    <button class="tab" id="tab-archetypes" onclick="switchView('archetypes', this)">Lärartyper</button>
   </div>
 
   <div id="tab-info"></div>
@@ -878,6 +890,120 @@ function processRows(rows) {
       complete:  levels.length > 0 && subjects.length > 0,
     };
   });
+}
+
+// ===== ARCHETYPES =====
+
+const ARCHETYPES = [
+  // Subject-primary: scored by Jaccard similarity against core subjects
+  { id: 'so',            name: 'SO-lärare',           color: '#7c3aed', subjects: ['Geografi','Historia','Religionskunskap','Samhällskunskap'], levels: null },
+  { id: 'no',            name: 'NO-lärare',            color: '#059669', subjects: ['Biologi','Fysik','Kemi'],                                    levels: null },
+  { id: 'sva',           name: 'SVA / SFI',            color: '#6366f1', subjects: ['Svenska som andraspråk och sfi'],                            levels: null },
+  { id: 'idrott',        name: 'Idrottslärare',        color: '#10b981', subjects: ['Idrott och hälsa'],                                           levels: null },
+  { id: 'estet',         name: 'Estetlärare',          color: '#ec4899', subjects: ['Bild','Musik','Slöjd'],                                       levels: null },
+  { id: 'engelska',      name: 'Engelska / ML',        color: '#0891b2', subjects: ['Engelska','Moderna språk'],                                   levels: null },
+  { id: 'svenska',       name: 'Svensklärare',         color: '#be185d', subjects: ['Svenska'],                                                    levels: null },
+  { id: 'math',          name: 'Matematiklärare',      color: '#d97706', subjects: ['Matematik'],                                                  levels: null },
+  // Level-primary: fixed score 0.75 — wins over generalist subject-teachers
+  { id: 'anpassad',      name: 'Anpassad utbildning',  color: '#94a3b8', subjects: null, levels: ['Anpassad grundskola 1-3','Anpassad grundskola 4-6','Anpassad grundskola 7-9','Anpassad gymnasieskola','Komvux som anpassad utbildning'] },
+  { id: 'lagstadiet',    name: 'Lågstadielärare',      color: '#f59e0b', subjects: null, levels: ['Grundskola F-3'] },
+  { id: 'mellanstadiet', name: 'Mellanstadielärare',   color: '#84cc16', subjects: null, levels: ['Grundskola 4-6'] },
+  { id: 'ovrig',         name: 'Övrigt',               color: '#9ca3af', subjects: null, levels: null },
+];
+
+function archetypeScore(user, arch) {
+  if (arch.subjects) {
+    const sSet = new Set(user.subjects);
+    const inter = arch.subjects.filter(s => sSet.has(s)).length;
+    if (inter === 0) return 0;
+    const union = new Set([...user.subjects, ...arch.subjects]).size;
+    return inter / union;
+  }
+  if (arch.levels) {
+    const lSet = new Set(user.levels);
+    return arch.levels.some(l => lSet.has(l)) ? 0.75 : 0;
+  }
+  return 0;
+}
+
+function assignArchetype(user) {
+  let best = ARCHETYPES.find(a => a.id === 'ovrig');
+  let bestScore = 0;
+  for (const arch of ARCHETYPES) {
+    if (arch.id === 'ovrig') continue;
+    const s = archetypeScore(user, arch);
+    if (s > bestScore) { bestScore = s; best = arch; }
+  }
+  return best;
+}
+
+function renderArchetypes() {
+  const users = filteredUsers.filter(u => u.complete);
+  const total = users.length;
+
+  if (total === 0) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="table-card"><div class="empty-state">Inga fullständiga profiler i valt filter.</div></div>';
+    return;
+  }
+
+  const groups = {};
+  ARCHETYPES.forEach(a => { groups[a.id] = []; });
+  users.forEach(u => { groups[assignArchetype(u).id].push(u); });
+
+  const rows = ARCHETYPES
+    .map(a => ({ arch: a, members: groups[a.id] }))
+    .filter(r => r.members.length > 0)
+    .sort((a, b) => {
+      if (a.arch.id === 'ovrig') return 1;
+      if (b.arch.id === 'ovrig') return -1;
+      return b.members.length - a.members.length;
+    });
+
+  const maxCount = Math.max(...rows.map(r => r.members.length));
+
+  const rowsHTML = rows.map(({ arch, members }) => {
+    const pct  = (members.length / total * 100).toFixed(1);
+    const barW = Math.round(members.length / maxCount * 100);
+
+    const subjectFreq = {};
+    members.forEach(u => u.subjects.forEach(s => { subjectFreq[s] = (subjectFreq[s] || 0) + 1; }));
+    const topSubjects = Object.entries(subjectFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([s]) => s);
+
+    const levelFreq = {};
+    members.forEach(u => u.levels.forEach(l => { levelFreq[l] = (levelFreq[l] || 0) + 1; }));
+    const topLevels = Object.entries(levelFreq).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([l]) => l);
+
+    return `
+      <div class="archetype-row">
+        <div class="archetype-dot" style="background:${arch.color}"></div>
+        <div class="archetype-name">${escHtml(arch.name)}</div>
+        <div class="archetype-bar-wrap">
+          <div class="archetype-bar" style="width:${barW}%;background:${arch.color}"></div>
+        </div>
+        <div class="archetype-count">${members.length.toLocaleString('sv')}<span class="archetype-pct">${pct}%</span></div>
+        <div class="archetype-tags">
+          ${topSubjects.map(s => `<span class="tag tag-subject" style="font-size:11px">${escHtml(s)}</span>`).join('')}
+          ${topLevels.map(l => `<span class="tag tag-level" style="font-size:11px">${escHtml(l)}</span>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('table-container').innerHTML = `
+    <div class="table-card">
+      <div class="table-header-row">
+        <h3>Lärartyper</h3>
+        <span class="result-count">${total.toLocaleString('sv')} fullständiga profiler</span>
+      </div>
+      <div style="padding:16px 20px">
+        <p style="font-size:13px;color:#6b7280;margin-bottom:20px">
+          Varje lärare tilldelas arketypen vars ämnen bäst matchar deras profil (Jaccard-likhet).
+          Lärare med bred profil — som klasslärare — faller naturligt till sin skolformstillhörighet.
+          Tags visar gruppens vanligaste ämnen och nivåer.
+        </p>
+        <div class="archetype-list">${rowsHTML}</div>
+      </div>
+    </div>`;
 }
 
 // ===== FILE HANDLING =====
@@ -1163,6 +1289,7 @@ const TAB_INFO = {
   leveloverlap:   'Matris som visar överlapp mellan nivåer. Varje cell visar andelen av rad-nivåns lärare som också valt kolumn-nivån. Används för att se vilka nivåkombinationer som är vanligast att undervisa i.',
   dashboard:      'Kontorsdisplay med nyckeltal i realtid. Layouten efterliknar ett Grafana-dashboard och är tänkt som underlag för att speca upp vad som ska byggas med Prometheus/Grafana.',
   traffbild:      'Visar hur stor andel av den nationella lärarpopulationen per skolform som har skapat konto. Populationssiffrorna är hämtade från Skolverkets statistik 2024/25 och Lärarprognos 2024. Förskola visas som intervall pga. osäkerhet kring målgrupp.',
+  archetypes:     'Klassificerar lärare med fullständiga profiler i arketyper baserat på Jaccard-likhet mot fördefinierade ämnesuppsättningar. Lärare med bred profil faller till sin skolformstillhörighet. Används för att identifiera vilka lärargrupper som är under- respektive överrepresenterade.',
   incomplete:     'Analyserar användare som saknar tilldelad roll — de har påbörjat men inte slutfört registreringen. Elever och övriga tillfrågas inte om nivå/ämnen och för lärare är det frivilligt, så dessa grupper ingår inte här. Kohortåldern visar om de är nyregistrerade (på väg att fullfölja) eller länge inaktiva.',
 };
 
@@ -1191,6 +1318,7 @@ function renderCurrentView() {
   else if (currentView === 'dashboard')      renderDashboard();
   else if (currentView === 'traffbild')      renderTraffbild();
   else if (currentView === 'incomplete')     renderIncomplete();
+  else if (currentView === 'archetypes')     renderArchetypes();
 }
 
 // ===== DASHBOARD =====

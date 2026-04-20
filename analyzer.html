@@ -894,47 +894,67 @@ function processRows(rows) {
 
 // ===== ARCHETYPES =====
 
+// Level keys that indicate secondary/upper school (subject teachers)
+const SECONDARY_LEVEL_KEYS = new Set(['primary7-9', 'secondary']);
+
 const ARCHETYPES = [
-  // Subject-primary: scored by Jaccard similarity against core subjects
-  { id: 'so',            name: 'SO-lärare',           color: '#7c3aed', subjects: ['Geografi','Historia','Religionskunskap','Samhällskunskap'], levels: null },
-  { id: 'no',            name: 'NO-lärare',            color: '#059669', subjects: ['Biologi','Fysik','Kemi'],                                    levels: null },
-  { id: 'sva',           name: 'SVA / SFI',            color: '#6366f1', subjects: ['Svenska som andraspråk och sfi'],                            levels: null },
-  { id: 'idrott',        name: 'Idrottslärare',        color: '#10b981', subjects: ['Idrott och hälsa'],                                           levels: null },
-  { id: 'estet',         name: 'Estetlärare',          color: '#ec4899', subjects: ['Bild','Musik','Slöjd'],                                       levels: null },
-  { id: 'engelska',      name: 'Engelska / ML',        color: '#0891b2', subjects: ['Engelska','Moderna språk'],                                   levels: null },
-  { id: 'svenska',       name: 'Svensklärare',         color: '#be185d', subjects: ['Svenska'],                                                    levels: null },
-  { id: 'math',          name: 'Matematiklärare',      color: '#d97706', subjects: ['Matematik'],                                                  levels: null },
-  // Level-primary: fixed score 0.75 — wins over generalist subject-teachers
-  { id: 'anpassad',      name: 'Anpassad utbildning',  color: '#94a3b8', subjects: null, levels: ['Anpassad grundskola 1-3','Anpassad grundskola 4-6','Anpassad grundskola 7-9','Anpassad gymnasieskola','Komvux som anpassad utbildning'] },
-  { id: 'lagstadiet',    name: 'Lågstadielärare',      color: '#f59e0b', subjects: null, levels: ['Grundskola F-3'] },
-  { id: 'mellanstadiet', name: 'Mellanstadielärare',   color: '#84cc16', subjects: null, levels: ['Grundskola 4-6'] },
-  { id: 'ovrig',         name: 'Övrigt',               color: '#9ca3af', subjects: null, levels: null },
+  // Klasslärare — classified by level (only reached if teacher has NO secondary levels)
+  { id: 'forskola',      name: 'Förskollärare',      color: '#f472b6', type: 'level',   levels: ['preschool'] },
+  { id: 'lagstadiet',    name: 'Lågstadielärare',    color: '#f59e0b', type: 'level',   levels: ['primary0-3'] },
+  { id: 'mellanstadiet', name: 'Mellanstadielärare', color: '#84cc16', type: 'level',   levels: ['primary4-6'] },
+  // Ämneslärare — classified by Jaccard on subjects (only for teachers with 7-9 or Gymnasium)
+  { id: 'so',       name: 'SO-lärare',       color: '#7c3aed', type: 'subject', subjects: ['Geografi','Historia','Religionskunskap','Samhällskunskap'] },
+  { id: 'no',       name: 'NO-lärare',       color: '#059669', type: 'subject', subjects: ['Biologi','Fysik','Kemi'] },
+  { id: 'svenska',  name: 'Svensklärare',    color: '#be185d', type: 'subject', subjects: ['Svenska'] },
+  { id: 'math',     name: 'Matematiklärare', color: '#d97706', type: 'subject', subjects: ['Matematik'] },
+  { id: 'engelska', name: 'Engelska / ML',   color: '#0891b2', type: 'subject', subjects: ['Engelska','Moderna språk'] },
+  { id: 'estet',    name: 'Estetlärare',     color: '#ec4899', type: 'subject', subjects: ['Bild','Musik','Slöjd'] },
+  { id: 'idrott',   name: 'Idrottslärare',   color: '#10b981', type: 'subject', subjects: ['Idrott och hälsa'] },
+  // Fallback for secondary teachers with no clear subject identity
+  { id: 'gym_ovrig',  name: 'Gymnasielärare (övrigt)',  color: '#64748b', type: 'level', levels: ['secondary'] },
+  { id: 'hogs_ovrig', name: 'Högstadielärare (övrigt)', color: '#475569', type: 'level', levels: ['primary7-9'] },
+  // Övriga nivåer — always level-based
+  { id: 'anpassad',    name: 'Anpassad utbildning',  color: '#94a3b8', type: 'level', levels: ['specialschoolprimary0-3','specialschoolprimary4-6','specialschoolprimary7-9','specialschoolsecondary','specialschooladults'] },
+  { id: 'specialsk',   name: 'Specialskola',         color: '#a78bfa', type: 'level', levels: ['specialneedsschoolf-4','specialneedsschool5-7','specialneedsschool8-10'] },
+  { id: 'sfi_komvux',  name: 'SFI / Komvux',         color: '#6366f1', type: 'level', levels: ['sfi','komvuxgrundvux'] },
+  { id: 'folkh_hogsk', name: 'Folkhögsk. / Högsk.',  color: '#8b5cf6', type: 'level', levels: ['folkhighschool','university'] },
+  { id: 'ovrig',       name: 'Övrigt',               color: '#9ca3af', type: 'fallback' },
 ];
 
-function archetypeScore(user, arch) {
-  if (arch.subjects) {
-    const sSet = new Set(user.subjects);
-    const inter = arch.subjects.filter(s => sSet.has(s)).length;
-    if (inter === 0) return 0;
-    const union = new Set([...user.subjects, ...arch.subjects]).size;
-    return inter / union;
-  }
-  if (arch.levels) {
-    const lSet = new Set(user.levels);
-    return arch.levels.some(l => lSet.has(l)) ? 0.75 : 0;
-  }
-  return 0;
-}
-
 function assignArchetype(user) {
-  let best = ARCHETYPES.find(a => a.id === 'ovrig');
-  let bestScore = 0;
-  for (const arch of ARCHETYPES) {
-    if (arch.id === 'ovrig') continue;
-    const s = archetypeScore(user, arch);
-    if (s > bestScore) { bestScore = s; best = arch; }
+  const levelSet   = new Set(user.levels);
+  const subjectSet = new Set(user.subjects);
+  const find       = id => ARCHETYPES.find(a => a.id === id);
+
+  // Teachers with 7-9 or Gymnasium: classify by subject (ämneslärare)
+  if ([...levelSet].some(l => SECONDARY_LEVEL_KEYS.has(l))) {
+    let best = null, bestScore = 0;
+    for (const arch of ARCHETYPES) {
+      if (arch.type !== 'subject') continue;
+      const inter = arch.subjects.filter(s => subjectSet.has(s)).length;
+      if (inter === 0) continue;
+      const score = inter / new Set([...user.subjects, ...arch.subjects]).size;
+      if (score > bestScore) { bestScore = score; best = arch; }
+    }
+    if (best) return best;
+    if (levelSet.has('secondary'))  return find('gym_ovrig');
+    return find('hogs_ovrig');
   }
-  return best;
+
+  // Klasslärare (Förskola, F-3, 4-6) — level wins, no subject check
+  if (levelSet.has('preschool'))  return find('forskola');
+  if (levelSet.has('primary0-3')) return find('lagstadiet');
+  if (levelSet.has('primary4-6')) return find('mellanstadiet');
+
+  // Övriga nivåer
+  const anpassadKeys   = new Set(['specialschoolprimary0-3','specialschoolprimary4-6','specialschoolprimary7-9','specialschoolsecondary','specialschooladults']);
+  const specialskolaK  = new Set(['specialneedsschoolf-4','specialneedsschool5-7','specialneedsschool8-10']);
+  if ([...levelSet].some(l => anpassadKeys.has(l)))  return find('anpassad');
+  if ([...levelSet].some(l => specialskolaK.has(l))) return find('specialsk');
+  if (levelSet.has('sfi') || levelSet.has('komvuxgrundvux')) return find('sfi_komvux');
+  if (levelSet.has('folkhighschool') || levelSet.has('university')) return find('folkh_hogsk');
+
+  return find('ovrig');
 }
 
 function renderArchetypes() {
@@ -972,7 +992,7 @@ function renderArchetypes() {
 
     const levelFreq = {};
     members.forEach(u => u.levels.forEach(l => { levelFreq[l] = (levelFreq[l] || 0) + 1; }));
-    const topLevels = Object.entries(levelFreq).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([l]) => l);
+    const topLevels = Object.entries(levelFreq).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([l]) => labelLevel(l));
 
     return `
       <div class="archetype-row">
@@ -997,9 +1017,9 @@ function renderArchetypes() {
       </div>
       <div style="padding:16px 20px">
         <p style="font-size:13px;color:#6b7280;margin-bottom:20px">
-          Varje lärare tilldelas arketypen vars ämnen bäst matchar deras profil (Jaccard-likhet).
-          Lärare med bred profil — som klasslärare — faller naturligt till sin skolformstillhörighet.
-          Tags visar gruppens vanligaste ämnen och nivåer.
+          Förskola / F-3 / 4-6: klassificeras efter nivå (klasslärare).
+          7-9 / Gymnasium: klassificeras efter ämne (ämneslärare, Jaccard-likhet).
+          Övriga nivåer klumpas per skolform. Tags visar gruppens vanligaste ämnen och nivåer.
         </p>
         <div class="archetype-list">${rowsHTML}</div>
       </div>
